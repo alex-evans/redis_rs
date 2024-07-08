@@ -15,15 +15,18 @@ fn main() {
     for stream in listener.incoming() {
         match stream {
             Ok(_stream) => {
-                println!("New Connection Coming in");
                 let mut _processing_stream = _stream;
                 let mut buffer = [0; 1024];
-                _processing_stream.read(&mut buffer).unwrap();
-
-                // if buffer.starts_with(b"PING") {
-                _processing_stream.write_all(b"+PONG\r\n").unwrap();
-                _processing_stream.flush().unwrap();
-                println!("PONG!")
+                let buffer_alt = [0; 1024];
+                let buffer_str = String::from_utf8_lossy(&buffer_alt);
+                for line in buffer_str.lines() {
+                    if line.trim() == "PING" {
+                        _processing_stream.read(&mut buffer).unwrap();
+                        _processing_stream.write_all(b"+PONG\r\n").unwrap();
+                        _processing_stream.flush().unwrap();
+                        println!("PONG!")
+                    }
+                }
             }
             Err(e) => {
                 println!("error: {}", e);
