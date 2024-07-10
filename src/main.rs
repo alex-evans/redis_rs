@@ -23,15 +23,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         if request.starts_with('[') {
                             let command: Vec<&str> = request[1..request.len()-1].split(',').collect();
                             println!("Received command: {:?}", command);
-                            match command[0] {
-                                "PING" => {
+                            match command[0].to_lowercase().as_str() {
+                                "ping" => {
                                     if let Err(e) = socker.write_all(b"+PONG\r\n").await {
                                         println!("Failed to write to connection: {}", e);
                                         return;
                                     }
                                     println!("PONG sent!");
                                 }
-                                "ECHO" => {
+                                "echo" => {
                                     if let Err(e) = socker.write_all(format!("+{}\r\n", command[1]).as_bytes()).await {
                                         println!("Failed to write to connection: {}", e);
                                         return;
