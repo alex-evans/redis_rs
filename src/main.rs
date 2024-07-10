@@ -22,6 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         let request = std::str::from_utf8(&buf).unwrap();
                         if request.starts_with('[') {
                             let command: Vec<&str> = request[1..request.len()-1].split(',').collect();
+                            println!("Received command: {:?}", command);
                             match command[0] {
                                 "PING" => {
                                     if let Err(e) = socker.write_all(b"+PONG\r\n").await {
