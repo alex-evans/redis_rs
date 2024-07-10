@@ -20,12 +20,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     Ok(_) => {
                         let request = std::str::from_utf8(&buf).unwrap();
-                        if request.contains("PING") {
-                            if let Err(e) = socker.write_all(b"+PONG\r\n").await {
-                                println!("Failed to write to connection: {}", e);
-                                return;
+                        if request.starts_with('[') {
+                            let command: Vec<&str> = request[1..request.len()-1].split(',').collect();
+                            match command[0] {
+                                "PING" => {
+                                    if let Err(e) = socker.write_all(b"+PONG\r\n").await {
+                                        println!("Failed to write to connection: {}", e);
+                                        return;
+                                    }
+                                    println!("PONG sent!");
+                                }
+                                "ECHO" => {
+                                    if let Err(e) = socker.write_all(format!("+{}\r\n", command[1]).as_bytes()).await {
+                                        println!("Failed to write to connection: {}", e);
+                                        return;
+                                    }
+                                    println!("ECHO sent!");
+                                }
+                                _ => {
+                                    println!("Unknown command: {}", command[0]);
+                                }
                             }
-                            println!("PONG sent!");
                         }
                         buf.fill(0);  // Clear the buffer
                     }
