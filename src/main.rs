@@ -20,6 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     Ok(_) => {
                         let request = std::str::from_utf8(&buf).unwrap();
+                        println!("Received request: {}", request);
                         if request.starts_with('[') {
                             let command: Vec<&str> = request[1..request.len()-1].split(',').collect();
                             println!("Received command: {:?}", command);
