@@ -7,45 +7,53 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = TcpListener::bind("127.0.0.1:6379").await?;
     
     loop {
-        let (mut socker, _) = listener.accept().await?;
+        let (mut socket, _) = listener.accept().await?;
 
         tokio::spawn(async move {
             let mut buf = [0; 1024];
 
             loop {
-                match socker.read(&mut buf).await {
+                // let mut response_bytes = b"+OK\r\n";  // Default response
+
+                match socket.read(&mut buf).await {
                     Ok(0) => {
                         println!("Connection closed");
                         return;
                     }
                     Ok(_) => {
                         let request = std::str::from_utf8(&buf).unwrap();
-                        println!("Received request: {}", request);
-                        if let Some(first_char) = request.chars().next() {
-                            println!("Request starts with: {}", first_char);
-                        }
-                        if request.starts_with('[') {
-                            let command: Vec<&str> = request[1..request.len()-1].split(',').collect();
-                            println!("Received command: {:?}", command);
-                            match command[0].to_lowercase().as_str() {
-                                "ping" => {
-                                    if let Err(e) = socker.write_all(b"+PONG\r\n").await {
-                                        println!("Failed to write to connection: {}", e);
-                                        return;
-                                    }
-                                    println!("PONG sent!");
-                                }
-                                "echo" => {
-                                    if let Err(e) = socker.write_all(format!("+{}\r\n", command[1]).as_bytes()).await {
-                                        println!("Failed to write to connection: {}", e);
-                                        return;
-                                    }
-                                    println!("ECHO sent!");
-                                }
-                                _ => {
-                                    println!("Unknown command: {}", command[0]);
-                                }
+
+                        if request.starts_with('+') {
+                            // Means it's a Simple String
+                            let response = &request[1..request.len()-2];
+                            println!("Received Simple String: {}", response);
+                            // Process the response here
+                        } else if request.starts_with('-') {
+                            // Means it's an Error
+                            let error = &request[1..request.len()-2];
+                            println!("Received Error: {}", error);
+                            // Process the error here
+                        } else if request.starts_with(':') {
+                            // Means it's an Integer
+                            let integer = &request[1..request.len()-2];
+                            println!("Received Integer: {}", integer);
+                            // Process the integer here
+                        } else if request.starts_with('$') {
+                            // Means it's a Bulk String
+                            let bulk_string = &request[1..request.len()-2];
+                            println!("Received Bulk String: {}", bulk_string);
+                            // Process the bulk string here
+                        } else if request.starts_with('*') {
+                            // Means it's a List
+                            let response_list = handle_list_request(request);
+                            let response_string = response_list.join("\r\n");
+                            let response_bytes = response_string.as_bytes().try_into().unwrap();
+                            if let Err(e) = socket.write_all(response_bytes).await {
+                                println!("Failed to write to connection: {}", e);
+                                return;
                             }
+                        } else {
+                            println!("Unknown request format");
                         }
                         buf.fill(0);  // Clear the buffer
                     }
@@ -58,3 +66,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 }
+
+fn handle_list_request(request: &str) -> Vec<&str> {
+    let mut lines = request.lines();
+    let num_elements = lines.next().unwrap().parse::<usize>().unwrap();
+    let mut elements = Vec::new();
+
+    for _ in 0..num_elements {
+        let element = lines.next().unwrap();
+        elements.push(element);
+    }
+
+    println!("Received List: {:?}", elements);
+    elements
+}
+ 
