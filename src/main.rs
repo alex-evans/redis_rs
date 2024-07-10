@@ -13,8 +13,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut buf = [0; 1024];
 
             loop {
-                // let mut response_bytes = b"+OK\r\n";  // Default response
-
                 match socket.read(&mut buf).await {
                     Ok(0) => {
                         println!("Connection closed");
