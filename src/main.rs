@@ -69,7 +69,17 @@ fn handle_list_request(request: &str) -> Vec<&str> {
     println!("Received List Request: {}", request);
     let mut lines = request.lines();
     println!("Lines: {:?}", lines);
-    let num_elements = lines.next().unwrap().parse::<usize>().unwrap();
+    // let num_elements = lines.next().unwrap().parse::<usize>().unwrap();
+
+    // Attempt to parse the number of elements
+    let num_elements = match lines.next().unwrap().parse::<usize>() {
+        Ok(num) => num,
+        Err(e) => {
+            println!("Failed to parse number of elements: {}", e);
+            return Vec::new();
+        }
+    };
+
     println!("Number of Elements: {}", num_elements);
     let mut elements = Vec::new();
 
