@@ -66,8 +66,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn handle_list_request(request: &str) -> Vec<&str> {
+    println!("Received List Request: {}", request);
     let mut lines = request.lines();
+    println!("Lines: {:?}", lines);
     let num_elements = lines.next().unwrap().parse::<usize>().unwrap();
+    println!("Number of Elements: {}", num_elements);
     let mut elements = Vec::new();
 
     for _ in 0..num_elements {
