@@ -100,7 +100,7 @@ fn handle_list_request(request: &str) -> Vec<&str> {
                         // Process the bulk string here
                     }
                     _ => {
-                        println!("Unknown request format");
+                        println!("Unknown request format: {}", first_element);
                     }
                 }
             }
