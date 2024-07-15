@@ -65,20 +65,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
-fn handle_list_request(request: &str) -> Vec<&str> {
+fn handle_list_request(request: &str) -> Vec<String> {
     println!("Received List Request: {}", request);
     let mut lines = request.lines();
-    let elements: Vec<&str> = lines
+    let elements: Vec<String> = lines
         .next()
         .unwrap()
         .chars()
         .skip(1)
         .collect::<String>()
         .split_whitespace()
+        .map(|s| s.to_string())
         .collect();
-    
-    println!("Received List: {:?}", elements);
+    println!("List Elements: {:?}", elements);
     elements
-
 }
  
