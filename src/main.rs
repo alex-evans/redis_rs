@@ -68,15 +68,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn handle_list_request(request: &str) -> Vec<&str> {
     println!("Received List Request: {}", request);
     let mut lines = request.lines();
-    println!("Lines: {:?}", lines);
-    // let num_elements = lines.next().unwrap().parse::<usize>().unwrap();
-
+    println!("Debug: {:?}", lines.next().unwrap());
+    
     // Attempt to parse the number of elements
     let num_elements = match lines.next().unwrap().parse::<usize>() {
-        Ok(num) => {
-            println!("Success line");
-            num
-        },
+        Ok(num) => num,
         Err(e) => {
             println!("Failed to parse number of elements: {}", e);
             return Vec::new();
