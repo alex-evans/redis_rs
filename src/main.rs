@@ -68,44 +68,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn handle_list_request(request: &str) -> Vec<&str> {
     println!("Received List Request: {}", request);
     let mut lines = request.lines();
+    let elements: Vec<&str> = lines
+        .next()
+        .unwrap()
+        .chars()
+        .skip(1)
+        .collect::<String>()
+        .split_whitespace()
+        .collect();
     
-    let elements = Vec::new();
-    while let Some(_line) = lines.next() {
-        if let Some(line) = lines.next() {
-            let components: Vec<&str> = line.split_whitespace().collect();
-            if let Some(first_element) = components.get(0) {
-                match *first_element {
-                    "+" => {
-                        // Handle Simple String
-                        let response = components.get(1).unwrap_or(&"");
-                        println!("Received Simple String: {}", response);
-                        // Process the response here
-                    }
-                    "-" => {
-                        // Handle Error
-                        let error = components.get(1).unwrap_or(&"");
-                        println!("Received Error: {}", error);
-                        // Process the error here
-                    }
-                    ":" => {
-                        // Handle Integer
-                        let integer = components.get(1).unwrap_or(&"");
-                        println!("Received Integer: {}", integer);
-                        // Process the integer here
-                    }
-                    "$" => {
-                        // Handle Bulk String
-                        let bulk_string = components.get(1).unwrap_or(&"");
-                        println!("Received Bulk String: {}", bulk_string);
-                        // Process the bulk string here
-                    }
-                    _ => {
-                        println!("Unknown request format: {}", first_element);
-                    }
-                }
-            }
-        }
-    }
     println!("Received List: {:?}", elements);
     elements
 
