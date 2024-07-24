@@ -45,8 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             // Process the bulk string here
                         } else if request.starts_with('*') {
                             // Means it's a List
-                            let response_list = handle_list_request(&request);
-                            let response_string = response_list.join("\r\n");
+                            let response_string = handle_list_request(&request);
                             let response_bytes = response_string.as_bytes().try_into().unwrap();
                             if let Err(e) = socket.write_all(response_bytes).await {
                                 println!("Failed to write to connection: {}", e);
@@ -67,22 +66,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
-fn handle_list_request(request: &str) -> Vec<String> {
+fn handle_list_request(request: &str) -> String {
     println!("Received List Request: {}", request);
     let mut lines = request.lines();
     let first_line = lines.next().unwrap();
     let number_of_elements = determine_number_of_elements(&first_line);
     if number_of_elements < 0 {
-        return vec!["-ERR Invalid request".to_string()];
+        return "-ERR Invalid request".to_string();
     } else {
-        let mut response_list = vec![];
         let element_one = get_next_element(&mut lines);
         match element_one.to_uppercase().as_str() {
-            "ECHO" => response_list.push(format!("${}\r\n", get_next_element(&mut lines))),
-            _ => response_list.push("-ERR Invalid request".to_string())
+            "ECHO" => return build_echo_response(&mut lines),
+            _ => return "-ERR Invalid request".to_string()
         }
-        println!("response_list: {:?}", response_list);
-        return response_list;
     }
 }
 
@@ -102,4 +98,11 @@ fn get_next_element(lines: &mut std::str::Lines) -> String {
     let _skip_line = lines.next().unwrap();
     let return_line = lines.next().unwrap();
     return return_line.to_string();
+}
+
+fn build_echo_response(lines: &mut std::str::Lines) -> String {
+    let echo_line = lines.next().unwrap();
+    let len_of_echo_line = echo_line.len();
+    let echo_response = format!("${}/r/n+{}/r/n", len_of_echo_line, echo_line);
+    return echo_response;
 }
