@@ -1,3 +1,5 @@
+use std::vec;
+
 use tokio::net::TcpListener;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -43,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             // Process the bulk string here
                         } else if request.starts_with('*') {
                             // Means it's a List
-                            let response_list = handle_list_request(request);
+                            let response_list = handle_list_request(&request);
                             let response_string = response_list.join("\r\n");
                             let response_bytes = response_string.as_bytes().try_into().unwrap();
                             if let Err(e) = socket.write_all(response_bytes).await {
@@ -68,16 +70,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn handle_list_request(request: &str) -> Vec<String> {
     println!("Received List Request: {}", request);
     let mut lines = request.lines();
-    let elements: Vec<String> = lines
-        .next()
-        .unwrap()
-        .chars()
-        .skip(1)
-        .collect::<String>()
-        .split_whitespace()
-        .map(|s| s.to_string())
-        .collect();
-    println!("List Elements: {:?}", elements);
-    elements
+    if let Some(first_line) = lines.next() {
+        let characters: Vec<char> = first_line.chars().skip(1).collect();
+        println!("Characters in the first line: {:?}", characters);
+        return vec!["OK".to_string()];
+    } else {
+        println!("No lines found in the request");
+        return vec!["ERROR".to_string()];
+    }
 }
- 
