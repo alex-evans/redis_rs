@@ -77,11 +77,9 @@ fn handle_list_request(request: &str) -> Vec<String> {
     } else {
         let mut response_list = vec![];
         let element_one = get_next_element(&mut lines);
-        for _ in 0..number_of_elements {
-            match element_one.as_str() {
-                "ECHO" => response_list.push(get_next_element(&mut lines)),
-                _ => response_list.push("-ERR Invalid request".to_string())
-            }
+        match element_one.as_str() {
+            "ECHO" => response_list.push(get_next_element(&mut lines)),
+            _ => response_list.push("-ERR Invalid request".to_string())
         }
         return response_list;
     }
