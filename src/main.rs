@@ -70,12 +70,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn handle_list_request(request: &str) -> Vec<String> {
     println!("Received List Request: {}", request);
     let mut lines = request.lines();
-    if let Some(first_line) = lines.next() {
-        let characters: Vec<char> = first_line.chars().skip(1).collect();
-        println!("Characters in the first line: {:?}", characters);
-        return vec!["OK".to_string()];
+    let first_line = lines.next().unwrap();
+    let number_of_elements = determine_number_of_elements(&first_line);
+    if number_of_elements < 0 {
+        return vec!["-ERR Invalid request".to_string()];
     } else {
-        println!("No lines found in the request");
-        return vec!["ERROR".to_string()];
+        let mut response_list = vec![];
+        for _ in 0..number_of_elements {
+            let element_one = get_next_element(&mut lines);
+            match element_one.as_str() {
+                "ECHO" => response_list.push(get_next_element(&mut lines)),
+                _ => response_list.push("-ERR Invalid request".to_string())
+            }
+        }
+        return response_list;
     }
+}
+
+fn determine_number_of_elements(line: &str) -> i32 {
+    let characters: String = line.chars().skip(1).collect();
+    let characters_as_int: Result<i32, _> = characters.parse();
+    if let Ok(num) = characters_as_int {
+        println!("Characters as integer: {}", num);
+        return num;
+    } else {
+        println!("Failed to convert characters to integer");
+        return -1;
+    }
+}
+
+fn get_next_element(lines: &mut std::str::Lines) -> String {
+    let _skip_line = lines.next().unwrap();
+    let return_line = lines.next().unwrap();
+    return return_line.to_string();
 }
