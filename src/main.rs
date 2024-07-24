@@ -77,6 +77,7 @@ fn handle_list_request(request: &str) -> String {
         let element_one = get_next_element(&mut lines);
         match element_one.to_uppercase().as_str() {
             "ECHO" => return build_echo_response(&mut lines),
+            "PING" => return "+PONG\r\n".to_string(),
             _ => return "-ERR Invalid request".to_string()
         }
     }
