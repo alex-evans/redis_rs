@@ -81,6 +81,7 @@ fn handle_list_request(request: &str) -> Vec<String> {
             "ECHO" => response_list.push(get_next_element(&mut lines)),
             _ => response_list.push("-ERR Invalid request".to_string())
         }
+        println!("response_list: {:?}", response_list);
         return response_list;
     }
 }
@@ -98,10 +99,7 @@ fn determine_number_of_elements(line: &str) -> i32 {
 }
 
 fn get_next_element(lines: &mut std::str::Lines) -> String {
-    println!("Getting next element");
     let _skip_line = lines.next().unwrap();
-    println!("_skip_line: {:?}", _skip_line.to_string());
     let return_line = lines.next().unwrap();
-    println!("return_line: {:?}", return_line.to_string());
     return return_line.to_string();
 }
