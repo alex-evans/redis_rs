@@ -102,7 +102,9 @@ fn get_next_element(lines: &mut std::str::Lines) -> String {
 
 fn build_echo_response(lines: &mut std::str::Lines) -> String {
     let echo_line = lines.next().unwrap();
+    println!("Echo Line: {}", echo_line);
     let len_of_echo_line = echo_line.len();
+    println!("Length of Echo Line: {}", len_of_echo_line);
     let echo_response = format!("${}\r\n{}\r\n", len_of_echo_line, echo_line);
     println!("Echo Response: {}", echo_response);
     return echo_response;
