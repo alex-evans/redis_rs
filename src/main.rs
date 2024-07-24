@@ -100,7 +100,11 @@ fn determine_number_of_elements(line: &str) -> i32 {
 }
 
 fn get_next_element(lines: &mut std::str::Lines) -> String {
+    println!("Getting next element");
+    println!("Lines 1: {:?}", lines);
     let _skip_line = lines.next().unwrap();
+    println!("Lines 2: {:?}", lines);
     let return_line = lines.next().unwrap();
+    println!("Return Line: {:?}", return_line.to_string());
     return return_line.to_string();
 }
