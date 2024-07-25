@@ -1,72 +1,84 @@
-use std::vec;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 use tokio::net::TcpListener;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+struct SharedState {
+    store: HashMap<String, String>,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Logs from your program will appear here!");
     let listener = TcpListener::bind("127.0.0.1:6379").await?;
-    
+    let state = Arc::new(Mutex::new(SharedState {
+        store: HashMap::new(),
+    }));
+
     loop {
-        let (mut socket, _) = listener.accept().await?;
-
+        let (socket, _) = listener.accept().await?;
+        let state_clone = state.clone();
         tokio::spawn(async move {
-            let mut buf = [0; 1024];
-
-            loop {
-                match socket.read(&mut buf).await {
-                    Ok(0) => {
-                        println!("Connection closed");
-                        return;
-                    }
-                    Ok(_) => {
-                        let request = std::str::from_utf8(&buf).unwrap();
-
-                        if request.starts_with('+') {
-                            // Means it's a Simple String
-                            let response = &request[1..request.len()-2];
-                            println!("Received Simple String: {}", response);
-                            // Process the response here
-                        } else if request.starts_with('-') {
-                            // Means it's an Error
-                            let error = &request[1..request.len()-2];
-                            println!("Received Error: {}", error);
-                            // Process the error here
-                        } else if request.starts_with(':') {
-                            // Means it's an Integer
-                            let integer = &request[1..request.len()-2];
-                            println!("Received Integer: {}", integer);
-                            // Process the integer here
-                        } else if request.starts_with('$') {
-                            // Means it's a Bulk String
-                            let bulk_string = &request[1..request.len()-2];
-                            println!("Received Bulk String: {}", bulk_string);
-                            // Process the bulk string here
-                        } else if request.starts_with('*') {
-                            // Means it's a List
-                            let response_string = handle_list_request(&request);
-                            let response_bytes = response_string.as_bytes().try_into().unwrap();
-                            if let Err(e) = socket.write_all(response_bytes).await {
-                                println!("Failed to write to connection: {}", e);
-                                return;
-                            }
-                        } else {
-                            println!("Unknown request format");
-                        }
-                        buf.fill(0);  // Clear the buffer
-                    }
-                    Err(e) => {
-                        println!("Failed to read from connection: {}", e);
-                        return;
-                    }
-                }
-            }
+                handle_connection(socket, state_clone).await;
         });
     }
 }
 
-fn handle_list_request(request: &str) -> String {
+async fn handle_connection(mut socket: tokio::net::TcpStream, state: Arc<Mutex<SharedState>>) {
+    let mut buf = [0; 1024];
+
+    loop {
+        match socket.read(&mut buf).await {
+            Ok(0) => {
+                println!("Connection closed");
+                return;
+            }
+            Ok(_) => {
+                let request = std::str::from_utf8(&buf).unwrap();
+
+                if request.starts_with('+') {
+                    // Means it's a Simple String
+                    let response = &request[1..request.len()-2];
+                    println!("Received Simple String: {}", response);
+                    // Process the response here
+                } else if request.starts_with('-') {
+                    // Means it's an Error
+                    let error = &request[1..request.len()-2];
+                    println!("Received Error: {}", error);
+                    // Process the error here
+                } else if request.starts_with(':') {
+                    // Means it's an Integer
+                    let integer = &request[1..request.len()-2];
+                    println!("Received Integer: {}", integer);
+                    // Process the integer here
+                } else if request.starts_with('$') {
+                    // Means it's a Bulk String
+                    let bulk_string = &request[1..request.len()-2];
+                    println!("Received Bulk String: {}", bulk_string);
+                    // Process the bulk string here
+                } else if request.starts_with('*') {
+                    // Means it's a List
+                    let response_string = handle_list_request(&request, &state);
+                    let response_bytes = response_string.as_bytes().try_into().unwrap();
+                    if let Err(e) = socket.write_all(response_bytes).await {
+                        println!("Failed to write to connection: {}", e);
+                        return;
+                    }
+                } else {
+                    println!("Unknown request format");
+                }
+                buf.fill(0);  // Clear the buffer
+            }
+            Err(e) => {
+                println!("Failed to read from connection: {}", e);
+                return;
+            }
+        }
+    }
+}
+
+fn handle_list_request(request: &str, state: &Arc<Mutex<SharedState>>) -> String {
     println!("Received List Request: {}", request);
     let mut lines = request.lines();
     let first_line = lines.next().unwrap();
@@ -78,6 +90,8 @@ fn handle_list_request(request: &str) -> String {
         match element_one.to_uppercase().as_str() {
             "ECHO" => return build_echo_response(&mut lines),
             "PING" => return "+PONG\r\n".to_string(),
+            "SET" => return handle_set_request(&mut lines, &state),
+            "GET" => return handle_get_request(&mut lines, &state),
             _ => return "-ERR Invalid request".to_string()
         }
     }
@@ -109,4 +123,28 @@ fn build_echo_response(lines: &mut std::str::Lines) -> String {
     let echo_response = format!("${}\r\n{}\r\n", len_of_echo_line, echo_line);
     println!("Echo Response: {}", echo_response);
     return echo_response;
+}
+
+fn handle_set_request(lines: &mut std::str::Lines, state: &Arc<Mutex<SharedState>>) -> String {
+    let key = get_next_element(lines);
+    let value = get_next_element(lines);
+    println!("Key: {}", key);
+    println!("Value: {}", value);
+    let mut state = state.lock().unwrap();
+    state.store.insert(key, value);
+    return "+OK\r\n".to_string();
+}
+
+fn handle_get_request(lines: &mut std::str::Lines, state: &Arc<Mutex<SharedState>>) -> String {
+    let key = get_next_element(lines);
+    println!("Key: {}", key);
+    let state = state.lock().unwrap();
+    match state.store.get(&key) {
+        Some(value) => {
+            let len_of_value = value.len();
+            let response = format!("${}\r\n{}\r\n", len_of_value, value);
+            return response;
+        }
+        None => return "$-1\r\n".to_string()
+    }
 }
