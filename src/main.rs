@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use tokio::net::TcpListener;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use std::time::{Duration, SystemTime};
 
 struct SharedState {
     store: HashMap<String, String>,
@@ -90,7 +91,7 @@ fn handle_list_request(request: &str, state: &Arc<Mutex<SharedState>>) -> String
         match element_one.to_uppercase().as_str() {
             "ECHO" => return build_echo_response(&mut lines),
             "PING" => return "+PONG\r\n".to_string(),
-            "SET" => return handle_set_request(&mut lines, &state),
+            "SET" => return handle_set_request(&mut lines, &state, number_of_elements),
             "GET" => return handle_get_request(&mut lines, &state),
             _ => return "-ERR Invalid request".to_string()
         }
@@ -125,15 +126,54 @@ fn build_echo_response(lines: &mut std::str::Lines) -> String {
     return echo_response;
 }
 
-fn handle_set_request(lines: &mut std::str::Lines, state: &Arc<Mutex<SharedState>>) -> String {
+fn handle_set_request(lines: &mut std::str::Lines, state: &Arc<Mutex<SharedState>>, number_of_elements: i32) -> String {
+    let mut state = state.lock().unwrap();
     let key = get_next_element(lines);
     let value = get_next_element(lines);
-    println!("Key: {}", key);
-    println!("Value: {}", value);
-    let mut state = state.lock().unwrap();
-    state.store.insert(key, value);
-    return "+OK\r\n".to_string();
+
+    if number_of_elements == 2 {
+        state.store.insert(key, value);
+        return "+OK\r\n".to_string();
+    }
+    
+    let sub_command: String = get_next_element(lines);
+    let sub_value: String = get_next_element(lines);
+    match sub_command.to_uppercase().as_str() {
+        "PX" => {
+            let expiration_duration = Duration::from_millis(sub_value.parse::<u64>().unwrap());
+            let expiration_time = SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_millis() as u64
+                + expiration_duration.as_millis() as u64;
+
+                state.store.insert(key, format!("({}\r\n{})", value, expiration_time));
+                return "+OK\r\n".to_string();
+        },
+        _ => {
+            state.store.insert(key, value);
+            return "+OK\r\n".to_string();
+        }
+    }
+
 }
+
+// fn handle_set(key: String, value: String, state: &Mutex<SharedState>) -> String {
+//     state.store.insert(key, value);
+//     return "+OK\r\n".to_string();
+// }
+
+// fn handle_set_with_expiration(key: String, value: String, expiration: String, state: &Mutex<SharedState>) -> String {
+//     let expiration_duration = Duration::from_millis(expiration.parse::<u64>().unwrap());
+//     let expiration_time = SystemTime::now()
+//         .duration_since(SystemTime::UNIX_EPOCH)
+//         .unwrap()
+//         .as_millis() as u64
+//         + expiration_duration.as_millis() as u64;
+
+//     state.store.insert(key, format!("({}\r\n{})", value, expiration_time));
+//     return "+OK\r\n".to_string();
+// }
 
 fn handle_get_request(lines: &mut std::str::Lines, state: &Arc<Mutex<SharedState>>) -> String {
     let key = get_next_element(lines);
