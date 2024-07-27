@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 use tokio::net::TcpListener;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use std::time::{Duration, SystemTime};
+use std::env;
 
 struct SharedState {
     store: HashMap<String, String>,
@@ -12,7 +13,19 @@ struct SharedState {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Logs from your program will appear here!");
-    let listener = TcpListener::bind("127.0.0.1:6379").await?;
+    // ...
+
+    let args: Vec<String> = env::args().collect();
+    let mut port = String::from("6379");
+
+    for i in 1..args.len() {
+        if args[i] == "--port" && i + 1 < args.len() {
+            port = args[i + 1].clone();
+        }
+    }
+
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).await?;
+
     let state = Arc::new(Mutex::new(SharedState {
         store: HashMap::new(),
     }));
@@ -157,23 +170,6 @@ fn handle_set_request(lines: &mut std::str::Lines, state: &Arc<Mutex<SharedState
     }
 
 }
-
-// fn handle_set(key: String, value: String, state: &Mutex<SharedState>) -> String {
-//     state.store.insert(key, value);
-//     return "+OK\r\n".to_string();
-// }
-
-// fn handle_set_with_expiration(key: String, value: String, expiration: String, state: &Mutex<SharedState>) -> String {
-//     let expiration_duration = Duration::from_millis(expiration.parse::<u64>().unwrap());
-//     let expiration_time = SystemTime::now()
-//         .duration_since(SystemTime::UNIX_EPOCH)
-//         .unwrap()
-//         .as_millis() as u64
-//         + expiration_duration.as_millis() as u64;
-
-//     state.store.insert(key, format!("({}\r\n{})", value, expiration_time));
-//     return "+OK\r\n".to_string();
-// }
 
 fn handle_get_request(lines: &mut std::str::Lines, state: &Arc<Mutex<SharedState>>) -> String {
     let key = get_next_element(lines);
