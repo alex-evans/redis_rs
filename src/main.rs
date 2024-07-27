@@ -147,7 +147,7 @@ fn handle_set_request(lines: &mut std::str::Lines, state: &Arc<Mutex<SharedState
                 .as_millis() as u64
                 + expiration_duration.as_millis() as u64;
 
-                state.store.insert(key, format!("({}\r\n{})", value, expiration_time));
+                state.store.insert(key, format!("{}\r\n{}", value, expiration_time));
                 return "+OK\r\n".to_string();
         },
         _ => {
@@ -193,7 +193,7 @@ fn handle_get_request(lines: &mut std::str::Lines, state: &Arc<Mutex<SharedState
 
                 println!("Current Time: {}", current_time);
                 println!("Expire Time: {}", expire_time);
-                
+
                 let expire_time_as_u64 = expire_time.parse::<u64>().unwrap();
                 if current_time > expire_time_as_u64 {
                     return "$-1\r\n".to_string();
