@@ -90,6 +90,7 @@ async fn process_request(config_ref: &Config, mut socket: tokio::net::TcpStream,
             }
             Ok(_) => {
                 let request = std::str::from_utf8(&buf).unwrap();
+                println!("We got here: {}", request);
                 if config_ref.replicaof != "" {
                     let response_string = store_replication(config_ref, &request, &state);
                     let response_bytes = response_string.as_bytes().try_into().unwrap();
