@@ -1,6 +1,7 @@
 
 use std::sync::{Arc, Mutex};
 
+use crate::Config;
 use crate::SharedState;
 use crate::handlers::echo::handle_echo_request;
 use crate::handlers::get::handle_get_request;
@@ -13,7 +14,7 @@ use crate::helpers::helpers::{
 };
 
 
-pub fn list_request(request: &str, state: &Arc<Mutex<SharedState>>) -> String {
+pub fn list_request(_config_ref: &Config, request: &str, state: &Arc<Mutex<SharedState>>) -> String {
     println!("Received List Request: {}", request);
     let mut lines = request.lines();
     let first_line = lines.next().unwrap();
@@ -27,7 +28,7 @@ pub fn list_request(request: &str, state: &Arc<Mutex<SharedState>>) -> String {
             "PING" => return "+PONG\r\n".to_string(),
             "SET" => return handle_set_request(&mut lines, &state, number_of_elements),
             "GET" => return handle_get_request(&mut lines, &state),
-            "INFO" => return handle_info_request(),
+            "INFO" => return handle_info_request(&state),
             _ => return "-ERR Invalid request".to_string()
         }
     }

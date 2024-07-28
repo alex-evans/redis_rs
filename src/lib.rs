@@ -5,8 +5,44 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 use tokio::task;
 
+#[derive(Clone)]
+pub struct Config {
+    pub port: String,
+    pub replicaof: String
+}
+
+impl Config {
+    pub fn from_args(args: Vec<String>) -> Result<Config, &'static str> {
+        let mut port = String::from("6379");
+        let mut replicaof = String::from("");
+
+        for i in 1..args.len() {
+            if args[i] == "--port" || args[i] == "-p" {
+                if i + 1 < args.len() {
+                    port = args[i + 1].clone();
+                } else {
+                    return Err("No port provided");
+                }
+            } else if args[i] == "--replicaof" {
+                if i + 1 < args.len() {
+                    replicaof = args[i + 1].clone();
+                } else {
+                    return Err("No replicaof provided");
+                }
+            }
+        }
+
+        Ok(Config {
+            port: port,
+            replicaof: replicaof
+        })
+
+    }
+}
+
 mod command_types {
     pub mod list;
+    pub mod replication;
 }
 
 mod handlers {
@@ -21,13 +57,14 @@ mod helpers {
 }
 
 use command_types::list::list_request;
+use command_types::replication::store_replication;
 
 pub struct SharedState {
     pub store: HashMap<String, String>,
 }
 
-pub async fn run(port: String) -> Result<(), Box<dyn std::error::Error>> {
-    let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).await?;
+pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", config.port)).await?;
     let state = Arc::new(Mutex::new(SharedState {
         store: HashMap::new(),
     }));
@@ -35,13 +72,14 @@ pub async fn run(port: String) -> Result<(), Box<dyn std::error::Error>> {
     loop {
         let (socket, _) = listener.accept().await?;
         let state_clone = state.clone();
+        let config_clone = config.clone();
         task::spawn(async move {
-            process_request(socket, state_clone).await;
+            process_request(&config_clone, socket, state_clone).await;
         });
     }
 }
 
-async fn process_request(mut socket: tokio::net::TcpStream, state: Arc<Mutex<SharedState>>) {
+async fn process_request(config_ref: &Config, mut socket: tokio::net::TcpStream, state: Arc<Mutex<SharedState>>) {
     let mut buf = [0; 1024];
 
     loop {
@@ -52,6 +90,14 @@ async fn process_request(mut socket: tokio::net::TcpStream, state: Arc<Mutex<Sha
             }
             Ok(_) => {
                 let request = std::str::from_utf8(&buf).unwrap();
+                if config_ref.replicaof != "" {
+                    let response_string = store_replication(config_ref, &request, &state);
+                    let response_bytes = response_string.as_bytes().try_into().unwrap();
+                    if let Err(e) = socket.write_all(response_bytes).await {
+                        println!("Failed to write to connection: {}", e);
+                        return;
+                    }
+                }
 
                 if request.starts_with('+') {
                     // Means it's a Simple String
@@ -75,7 +121,7 @@ async fn process_request(mut socket: tokio::net::TcpStream, state: Arc<Mutex<Sha
                     // Process the bulk string here
                 } else if request.starts_with('*') {
                     // Means it's a List
-                    let response_string = list_request(&request, &state);
+                    let response_string = list_request(config_ref, &request, &state);
                     let response_bytes = response_string.as_bytes().try_into().unwrap();
                     if let Err(e) = socket.write_all(response_bytes).await {
                         println!("Failed to write to connection: {}", e);
