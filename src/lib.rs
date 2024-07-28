@@ -92,7 +92,6 @@ async fn process_request(config_ref: &Config, mut socket: tokio::net::TcpStream,
                 let request = std::str::from_utf8(&buf).unwrap();
                 if config_ref.replicaof != "" {
                     let response_string = store_replication(config_ref, &request, &state);
-                    println!("Replication Response: {}", response_string);
                     let response_bytes = response_string.as_bytes().try_into().unwrap();
                     if let Err(e) = socket.write_all(response_bytes).await {
                         println!("Failed to write to connection: {}", e);
@@ -123,7 +122,6 @@ async fn process_request(config_ref: &Config, mut socket: tokio::net::TcpStream,
                 } else if request.starts_with('*') {
                     // Means it's a List
                     let response_string = list_request(config_ref, &request, &state);
-                    println!("Response: {}", response_string);
                     let response_bytes = response_string.as_bytes().try_into().unwrap();
                     if let Err(e) = socket.write_all(response_bytes).await {
                         println!("Failed to write to connection: {}", e);
