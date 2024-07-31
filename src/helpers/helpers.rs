@@ -22,6 +22,8 @@ pub fn get_next_element(lines: &mut std::str::Lines) -> String {
 
 pub fn send_message_to_server(address: &String, message: String) -> String {
     let mut response = String::new();
+    println!("Sending to address: {}", address);
+    println!("Sending message to server: {}", message);
     match TcpStream::connect(address) {
         Ok(mut stream) => {
             stream.write_all(message.as_bytes()).unwrap();
