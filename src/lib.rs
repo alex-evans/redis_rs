@@ -73,14 +73,17 @@ pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         store: HashMap::new(),
     }));
 
+    let config_clone = config.clone();
+    if config_clone.replicaof != "" {
+        println!("Replicaof is set to: {}", config_clone.replicaof);
+        store_replication(&config_clone, &state);
+        ping_master(&state);
+    }
+
     loop {
-        println!("IN DA LOOP");
         let (socket, _) = listener.accept().await?;
-        println!("Accepted connection");
         let state_clone = state.clone();
-        println!("State Cloned");
         let config_clone = config.clone();
-        println!("Config Cloned");
         task::spawn(async move {
             process_request(&config_clone, socket, state_clone).await;
         });
@@ -90,12 +93,6 @@ pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 async fn process_request(config_ref: &Config, mut socket: tokio::net::TcpStream, state: Arc<Mutex<SharedState>>) {
     println!("Handling process request");
     let mut buf = [0; 1024];
-
-    if config_ref.replicaof != "" {
-        println!("Replicaof is set to: {}", config_ref.replicaof);
-        store_replication(config_ref, &state);
-        ping_master(&state);
-    }
 
     loop {
         match socket.read(&mut buf).await {
