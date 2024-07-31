@@ -57,7 +57,10 @@ mod helpers {
 }
 
 use command_types::list::list_request;
-use command_types::replication::store_replication;
+use command_types::replication::{
+    store_replication,
+    ping_master
+};
 
 pub struct SharedState {
     pub store: HashMap<String, String>,
@@ -85,6 +88,7 @@ async fn process_request(config_ref: &Config, mut socket: tokio::net::TcpStream,
     if config_ref.replicaof != "" {
         println!("Replicaof is set to: {}", config_ref.replicaof);
         store_replication(config_ref, &state);
+        ping_master(ref_state: &state);
     }
 
     loop {
