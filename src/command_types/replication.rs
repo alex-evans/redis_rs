@@ -24,6 +24,7 @@ pub fn ping_master(ref_state: &Arc<Mutex<SharedState>>) -> () {
             let host = parts.get(0).unwrap_or(&"");
             let port = parts.get(1).unwrap_or(&"");
             let address = format!("{}:{}", host, port);
+            println!("Address: {}", address);
 
             match TcpStream::connect(address) {
                 Ok(mut stream) => {
