@@ -35,6 +35,7 @@ pub fn send_replication_data(ref_config: &Config, ref_state: &Arc<Mutex<SharedSt
     let state = ref_state.lock().unwrap();
     let repl_port: &str = &ref_config.port;
 
+    println!("Replicaof: {:?}", state.store.get("replicaof"));
     match state.store.get("replicaof") {
         Some(full_value) => {
             let parts: Vec<&str> = full_value.split(" ").collect();
