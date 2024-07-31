@@ -88,7 +88,7 @@ async fn process_request(config_ref: &Config, mut socket: tokio::net::TcpStream,
     if config_ref.replicaof != "" {
         println!("Replicaof is set to: {}", config_ref.replicaof);
         store_replication(config_ref, &state);
-        ping_master(ref_state: &state);
+        ping_master(&state);
     }
 
     loop {
