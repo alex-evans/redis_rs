@@ -24,6 +24,7 @@ pub fn ping_master(ref_state: &Arc<Mutex<SharedState>>) -> () {
             let host = parts.get(0).unwrap_or(&"");
             let port = parts.get(1).unwrap_or(&"");
             let address = format!("{}:{}", host, port);
+            println!("Ping - Connecting to Master: {}", address);
 
             match TcpStream::connect(address) {
                 Ok(mut stream) => {
@@ -60,7 +61,7 @@ pub fn send_replication_data(ref_config: &Config, ref_state: &Arc<Mutex<SharedSt
             let address = format!("{}:{}", master_host, master_port);
             println!("Connecting to Master: {}", address);
 
-            match TcpStream::connect(address.clone()) {
+            match TcpStream::connect(address) {
                 Ok(mut stream) => {
                     let message = format!("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n${}\r\n{}\r\n", repl_port.len(), repl_port);
                     stream.write_all(message.as_bytes()).unwrap();
@@ -76,21 +77,21 @@ pub fn send_replication_data(ref_config: &Config, ref_state: &Arc<Mutex<SharedSt
                 }
             }
 
-            match TcpStream::connect(address) {
-                Ok(mut stream) => {
-                    let message = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\npsync2\r\n".to_string();
-                    stream.write_all(message.as_bytes()).unwrap();
+            // match TcpStream::connect(address) {
+            //     Ok(mut stream) => {
+            //         let message = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\npsync2\r\n".to_string();
+            //         stream.write_all(message.as_bytes()).unwrap();
                     
-                    let mut response = String::new();
-                    stream.read_to_string(&mut response).unwrap();
+            //         let mut response = String::new();
+            //         stream.read_to_string(&mut response).unwrap();
                     
-                    println!("Replication response: {}", response);
-                }
-                Err(e) => {
-                    println!("Failed to connect to {}:{}", master_host, master_port);
-                    println!("Error: {}", e);
-                }
-            }
+            //         println!("Replication response: {}", response);
+            //     }
+            //     Err(e) => {
+            //         println!("Failed to connect to {}:{}", master_host, master_port);
+            //         println!("Error: {}", e);
+            //     }
+            // }
         }
         None => {
             println!("No Master to send replication data to");
