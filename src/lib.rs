@@ -59,7 +59,8 @@ mod helpers {
 use command_types::list::list_request;
 use command_types::replication::{
     store_replication,
-    ping_master
+    ping_master,
+    send_replication_data
 };
 
 pub struct SharedState {
@@ -78,6 +79,7 @@ pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         println!("Replicaof is set to: {}", config_clone.replicaof);
         store_replication(&config_clone, &state);
         ping_master(&state);
+        send_replication_data(&config_clone, &state);
     }
 
     loop {
