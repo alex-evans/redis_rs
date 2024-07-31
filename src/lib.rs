@@ -92,6 +92,7 @@ async fn process_request(config_ref: &Config, mut socket: tokio::net::TcpStream,
                 let request = std::str::from_utf8(&buf).unwrap();
                 println!("We got here: {}", request);
                 if config_ref.replicaof != "" {
+                    println!("Replicaof is set to: {}", config_ref.replicaof);
                     let response_string = store_replication(config_ref, &request, &state);
                     let response_bytes = response_string.as_bytes().try_into().unwrap();
                     if let Err(e) = socket.write_all(response_bytes).await {
@@ -122,6 +123,7 @@ async fn process_request(config_ref: &Config, mut socket: tokio::net::TcpStream,
                     // Process the bulk string here
                 } else if request.starts_with('*') {
                     // Means it's a List
+                    println!("Received List: {}", request);
                     let response_string = list_request(config_ref, &request, &state);
                     let response_bytes = response_string.as_bytes().try_into().unwrap();
                     if let Err(e) = socket.write_all(response_bytes).await {
