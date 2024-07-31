@@ -83,6 +83,7 @@ pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn process_request(config_ref: &Config, mut socket: tokio::net::TcpStream, state: Arc<Mutex<SharedState>>) {
+    println!("Handling process request");
     let mut buf = [0; 1024];
 
     if config_ref.replicaof != "" {
