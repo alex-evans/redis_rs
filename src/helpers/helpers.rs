@@ -26,13 +26,16 @@ pub fn send_message_to_server(address: &String, message: String) -> String {
     println!("Sending message to server: {}", message);
     match TcpStream::connect(address) {
         Ok(mut stream) => {
+            println!("Connected to address");
             stream.write_all(message.as_bytes()).unwrap();
             stream.read_to_string(&mut response).unwrap();
+            println!("Should this be where we send the REPLCONF response?");
         }
         Err(e) => {
             println!("Failed to connect address");
             println!("Error: {}", e);
         }
     }
+    println!("Did we ever get here?");
     return response;
 }
