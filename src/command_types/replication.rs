@@ -58,6 +58,7 @@ pub fn send_replication_data(ref_config: &Config, ref_state: &Arc<Mutex<SharedSt
             let master_host = parts.get(0).unwrap_or(&"");
             let master_port = parts.get(1).unwrap_or(&"");
             let address = format!("{}:{}", master_host, master_port);
+            println!("Connecting to Master: {}", address);
 
             match TcpStream::connect(address.clone()) {
                 Ok(mut stream) => {
