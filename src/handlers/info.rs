@@ -20,7 +20,7 @@ pub fn handle_info_request(state: &Arc<Mutex<SharedState>>) -> String {
 
     let response: String = format!(
         "${}\r\nrole:{}\r\nmaster_replid:{}\r\nmaster_repl_offset:{}\r\n",
-        role.len() + 5 + master_replid.len() + 15 + master_repl_offset.len() + 21,
+        role.len() + 5 + master_replid.len() + 15 + master_repl_offset.len() + 21 + 6,  // Added 6 at the end for the \r\n bytes
         role,
         master_replid,
         master_repl_offset
