@@ -67,15 +67,20 @@ pub struct SharedState {
 }
 
 pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
+    println!("Starting server on port {}", config.port);
     let listener = TcpListener::bind(format!("127.0.0.1:{}", config.port)).await?;
     let state = Arc::new(Mutex::new(SharedState {
         store: HashMap::new(),
     }));
 
     loop {
+        println!("IN DA LOOP");
         let (socket, _) = listener.accept().await?;
+        println!("Accepted connection");
         let state_clone = state.clone();
+        println!("State Cloned");
         let config_clone = config.clone();
+        println!("Config Cloned");
         task::spawn(async move {
             process_request(&config_clone, socket, state_clone).await;
         });
