@@ -21,8 +21,11 @@ pub fn ping_master(ref_state: &Arc<Mutex<SharedState>>) -> () {
     match state.store.get("replicaof") {
         Some(full_value) => {
             let parts: Vec<&str> = full_value.split("\r\n").collect();
+            println!("Parts: {:?}", parts);
             let host = parts.get(0).unwrap_or(&"");
+            println!("Host: {}", host);
             let port = parts.get(1).unwrap_or(&"");
+            println!("Port: {}", port);
             let address = format!("{}:{}", host, port);
             println!("Address: {}", address);
 
