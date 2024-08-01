@@ -20,11 +20,11 @@ pub fn get_next_element(lines: &mut std::str::Lines) -> String {
     return return_line.to_string();
 }
 
-pub fn send_message_to_server(stream: &mut TcpStream, message: &str) -> String {
+pub fn send_message_to_server(stream: &mut TcpStream, message: &str) -> Result<String, std::io::Error> {
     let mut response = String::new();
     println!("Sending message to server: {}", message);
-    stream.write_all(message.as_bytes()).unwrap();
-    stream.read_to_string(&mut response).unwrap();
+    stream.write_all(message.as_bytes())?;
+    stream.read_to_string(&mut response)?;
     println!("Received response: {}", response);
-    response
+    Ok(response)
 }
