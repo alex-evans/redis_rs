@@ -15,7 +15,7 @@ pub fn store_replication(config_ref: &Config, ref_state: &Arc<Mutex<SharedState>
 pub fn send_replication_data(ref_config: &Config, ref_state: &Arc<Mutex<SharedState>>) -> () {
     println!("Sending Replication Data");
     let state = ref_state.lock().unwrap();
-    let repl_port: &str = &ref_config.port;
+    // let repl_port: &str = &ref_config.port;
 
     println!("Replicaof: {:?}", state.store.get("replicaof"));
     match state.store.get("replicaof") {
