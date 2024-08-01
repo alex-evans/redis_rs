@@ -1,5 +1,6 @@
 
 use std::sync::{Arc, Mutex};
+use std::net::TcpStream;
 
 use crate::Config;
 use crate::SharedState;
@@ -9,25 +10,6 @@ pub fn store_replication(config_ref: &Config, ref_state: &Arc<Mutex<SharedState>
     println!("Storing Replication Config");
     let mut state = ref_state.lock().unwrap();
     state.store.insert("replicaof".to_string(), config_ref.replicaof.clone());
-}
-
-pub fn ping_master(ref_state: &Arc<Mutex<SharedState>>) -> () {
-    println!("Pinging Master");
-    let state = ref_state.lock().unwrap();
-    match state.store.get("replicaof") {
-        Some(full_value) => {
-            let parts: Vec<&str> = full_value.split(" ").collect();
-            let host = parts.get(0).unwrap_or(&"");
-            let port = parts.get(1).unwrap_or(&"");
-            let address = format!("{}:{}", host, port);
-            println!("Ping - Connecting to Master: {}", address);
-            let message = "*1\r\n$4\r\nPING\r\n".to_string();
-            send_message_to_server(&address, message);
-        }
-        None => {
-            println!("No Master to ping");
-        }
-    }
 }
 
 pub fn send_replication_data(ref_config: &Config, ref_state: &Arc<Mutex<SharedState>>) -> () {
@@ -42,15 +24,27 @@ pub fn send_replication_data(ref_config: &Config, ref_state: &Arc<Mutex<SharedSt
             let master_host = parts.get(0).unwrap_or(&"");
             let master_port = parts.get(1).unwrap_or(&"");
             let address = format!("{}:{}", master_host, master_port);
-            println!("Connecting to Master: {}", address);
             
-            // First Message: Listening Port
-            let message = format!("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n${}\r\n{}\r\n", repl_port.len(), repl_port);
-            send_message_to_server(&address, message);
+            println!("Connecting to Master: {}", address);
+            match TcpStream::connect(&address) {
+                Ok(mut stream) => {
+                    // Send PING message to Master
+                    let message = "*1\r\n$4\r\nPING\r\n".to_string();
+                    send_message_to_server(&mut stream, &message);
 
-            // Second Message: Capabilities
-            let message = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\npsync2\r\n".to_string();
-            send_message_to_server(&address, message);
+                    // Send Listening Port to Master
+                    let message = format!("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n${}\r\n{}\r\n", repl_port.len(), repl_port);
+                    send_message_to_server(&mut stream, &message);
+
+                    // Send Capabilities to Master
+                    let message = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\npsync2\r\n".to_string();
+                    send_message_to_server(&mut stream, &message);
+                }
+                Err(e) => {
+                    println!("Failed to connect to Master: {}", e);
+                }
+            }
+
         }
         None => {
             println!("No Master to send replication data to");
