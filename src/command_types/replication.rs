@@ -28,7 +28,7 @@ pub fn send_replication_data(ref_config: &Config, ref_state: &Arc<Mutex<SharedSt
             println!("Connecting to Master: {}", address);
             match TcpStream::connect(&address) {
                 Ok(mut stream) => {
-                    
+
                     // Send PING message to Master
                     let message = "*1\r\n$4\r\nPING\r\n".to_string();
                     let msg_response = send_message_to_server(&mut stream, &message).unwrap();
@@ -40,7 +40,7 @@ pub fn send_replication_data(ref_config: &Config, ref_state: &Arc<Mutex<SharedSt
                     println!("Received Listening Port response: {}", msg_response);
 
                     // Send Capabilities to Master
-                    let message = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\npsync2\r\n".to_string();
+                    let message = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n".to_string();
                     let msg_response: String = send_message_to_server(&mut stream, &message).unwrap();
                     println!("Received Capabilities response: {}", msg_response);
 
