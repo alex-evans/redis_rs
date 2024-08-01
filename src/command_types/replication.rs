@@ -30,7 +30,7 @@ pub fn send_replication_data(_ref_config: &Config, ref_state: &Arc<Mutex<SharedS
                 Ok(mut stream) => {
 
                     // Send PING message to Master
-                    let message = "*1\r\n$4\r\nPING\r\n".to_string();
+                    let message = "*1\r\n$4\r\nPING".to_string();
                     let msg_response = send_message_to_server(&mut stream, &message).unwrap();
                     println!("Received PING response: {}", msg_response);
 
