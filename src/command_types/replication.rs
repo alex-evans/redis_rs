@@ -35,7 +35,8 @@ pub fn send_replication_data(ref_config: &Config, ref_state: &Arc<Mutex<SharedSt
                     println!("Received PING response: {}", msg_response);
 
                     // Send Listening Port to Master
-                    let message = format!("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n${}\r\n{}\r\n", repl_port.len(), repl_port);
+                    // let message = format!("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n${}\r\n{}\r\n", repl_port.len(), repl_port);
+                    let message: String = "*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n6380\r\n".to_string();
                     let msg_response: String = send_message_to_server(&mut stream, &message).unwrap();
                     println!("Received Listening Port response: {}", msg_response);
 
