@@ -12,7 +12,7 @@ pub fn store_replication(config_ref: &Config, ref_state: &Arc<Mutex<SharedState>
     state.store.insert("replicaof".to_string(), config_ref.replicaof.clone());
 }
 
-pub fn send_replication_data(ref_config: &Config, ref_state: &Arc<Mutex<SharedState>>) -> () {
+pub fn send_replication_data(_ref_config: &Config, ref_state: &Arc<Mutex<SharedState>>) -> () {
     println!("Sending Replication Data");
     let state = ref_state.lock().unwrap();
     // let repl_port: &str = &ref_config.port;
