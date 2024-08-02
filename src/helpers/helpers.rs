@@ -1,6 +1,6 @@
 
 use std::net::TcpStream;
-use std::io::{self, Read, Write, BufRead, BufReader};
+use std::io::{Write, BufRead, BufReader};
 
 pub fn determine_number_of_elements(line: &str) -> i32 {
     let characters: String = line.chars().skip(1).collect();

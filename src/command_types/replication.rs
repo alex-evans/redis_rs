@@ -45,6 +45,11 @@ pub fn send_replication_data(_ref_config: &Config, ref_state: &Arc<Mutex<SharedS
                     let msg_response = send_message_to_server(&mut stream, &message).unwrap();
                     println!("Received Capabilities response: {}", msg_response);
 
+                    // Send PSYNC message to Master
+                    let message = "*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n".to_string();
+                    let msg_response = send_message_to_server(&mut stream, &message).unwrap();
+                    println!("Received PSYNC response: {}", msg_response);
+                
                 }
                 Err(e) => {
                     println!("Failed to connect to Master: {}", e);
