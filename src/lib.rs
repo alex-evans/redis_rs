@@ -50,6 +50,8 @@ mod handlers {
     pub mod get;
     pub mod info;
     pub mod set;
+    pub mod psync;
+    pub mod replconf;
 }
 
 mod helpers {

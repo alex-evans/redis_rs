@@ -6,6 +6,8 @@ use crate::SharedState;
 use crate::handlers::echo::handle_echo_request;
 use crate::handlers::get::handle_get_request;
 use crate::handlers::info::handle_info_request;
+use crate::handlers::psync::handle_psync_request;
+use crate::handlers::replconf::handle_replconf_request;
 use crate::handlers::set::handle_set_request;
 
 use crate::helpers::helpers::{
@@ -29,7 +31,8 @@ pub fn list_request(_config_ref: &Config, request: &str, state: &Arc<Mutex<Share
             "SET" => return handle_set_request(&mut lines, &state, number_of_elements),
             "GET" => return handle_get_request(&mut lines, &state),
             "INFO" => return handle_info_request(&state),
-            "REPLCONF" => return "+OK\r\n".to_string(), 
+            "REPLCONF" => return handle_replconf_request(), 
+            "PSYNC" => return handle_psync_request(),
             _ => return "-ERR Invalid request".to_string()
         }
     }
