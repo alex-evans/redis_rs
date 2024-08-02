@@ -36,13 +36,13 @@ pub fn send_replication_data(_ref_config: &Config, ref_state: &Arc<Mutex<SharedS
 
                     // Send Listening Port to Master
                     // let message = format!("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n${}\r\n{}\r\n", repl_port.len(), repl_port);
-                    let message: String = "*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n6380\r\n".to_string();
-                    let msg_response: String = send_message_to_server(&mut stream, &message).unwrap();
+                    let message = "*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n6380\r\n".to_string();
+                    let msg_response = send_message_to_server(&mut stream, &message).unwrap();
                     println!("Received Listening Port response: {}", msg_response);
 
                     // Send Capabilities to Master
                     let message = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n".to_string();
-                    let msg_response: String = send_message_to_server(&mut stream, &message).unwrap();
+                    let msg_response = send_message_to_server(&mut stream, &message).unwrap();
                     println!("Received Capabilities response: {}", msg_response);
 
                 }

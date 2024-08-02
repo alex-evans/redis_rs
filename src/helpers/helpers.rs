@@ -1,6 +1,6 @@
 
 use std::net::TcpStream;
-use std::io::{Read, Write};
+use std::io::{self, Read, Write, BufRead, BufReader};
 
 pub fn determine_number_of_elements(line: &str) -> i32 {
     let characters: String = line.chars().skip(1).collect();
@@ -21,10 +21,11 @@ pub fn get_next_element(lines: &mut std::str::Lines) -> String {
 }
 
 pub fn send_message_to_server(stream: &mut TcpStream, message: &str) -> Result<String, std::io::Error> {
-    let mut response = String::new();
     println!("Sending message to server: {}", message);
     stream.write_all(message.as_bytes())?;
-    stream.read_to_string(&mut response)?;
-    println!("Received response: {}", response);
+
+    let mut reader = BufReader::new(stream);
+    let mut response = String::new();
+    reader.read_line(&mut response)?;
     Ok(response)
 }
