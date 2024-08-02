@@ -29,7 +29,7 @@ pub fn list_request(_config_ref: &Config, request: &str, state: &Arc<Mutex<Share
             "SET" => return handle_set_request(&mut lines, &state, number_of_elements),
             "GET" => return handle_get_request(&mut lines, &state),
             "INFO" => return handle_info_request(&state),
-            "REPLCONF" => return "+OK\r\n".to_string(),
+            "REPLCONF" => return "+OK\r\n".to_string(), 
             _ => return "-ERR Invalid request".to_string()
         }
     }
