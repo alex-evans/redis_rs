@@ -79,7 +79,7 @@ pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     if config_clone.replicaof != "" {
         println!("Replicaof is set to: {}", config_clone.replicaof);
         store_replication(&config_clone, &state);
-        send_replication_data(&config_clone, &state);
+        send_replication_data(&config_clone, &state).await;
     }
 
     loop {

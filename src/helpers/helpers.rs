@@ -1,6 +1,6 @@
 
-use std::net::TcpStream;
-use std::io::{Write, BufRead, BufReader};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::net::TcpStream;
 
 pub fn determine_number_of_elements(line: &str) -> i32 {
     let characters: String = line.chars().skip(1).collect();
@@ -20,12 +20,12 @@ pub fn get_next_element(lines: &mut std::str::Lines) -> String {
     return return_line.to_string();
 }
 
-pub fn send_message_to_server(stream: &mut TcpStream, message: &str) -> Result<String, std::io::Error> {
+pub async fn send_message_to_server(stream: &mut TcpStream, message: &str) -> Result<String, std::io::Error> {
     println!("Sending message to server: {}", message);
-    stream.write_all(message.as_bytes())?;
+    AsyncWriteExt::write_all(stream, message.as_bytes()).await?;
 
     let mut reader = BufReader::new(stream);
     let mut response = String::new();
-    reader.read_line(&mut response)?;
+    AsyncBufReadExt::read_line(&mut reader, &mut response).await?;
     Ok(response)
 }

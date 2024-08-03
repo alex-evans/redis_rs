@@ -1,6 +1,6 @@
 
 use std::sync::{Arc, Mutex};
-use std::net::TcpStream;
+use tokio::net::TcpStream;
 
 use crate::Config;
 use crate::SharedState;
@@ -12,7 +12,7 @@ pub fn store_replication(config_ref: &Config, ref_state: &Arc<Mutex<SharedState>
     state.store.insert("replicaof".to_string(), config_ref.replicaof.clone());
 }
 
-pub fn send_replication_data(_ref_config: &Config, ref_state: &Arc<Mutex<SharedState>>) -> () {
+pub async fn send_replication_data(_ref_config: &Config, ref_state: &Arc<Mutex<SharedState>>) -> () {
     println!("Sending Replication Data");
     let state = ref_state.lock().unwrap();
     // let repl_port: &str = &ref_config.port;
@@ -26,28 +26,27 @@ pub fn send_replication_data(_ref_config: &Config, ref_state: &Arc<Mutex<SharedS
             let address = format!("{}:{}", master_host, master_port);
             
             println!("Connecting to Master: {}", address);
-            match TcpStream::connect(&address) {
+            match TcpStream::connect(&address).await {
                 Ok(mut stream) => {
-
                     // Send PING message to Master
                     let message = "*1\r\n$4\r\nPING\r\n".to_string();
-                    let msg_response = send_message_to_server(&mut stream, &message).unwrap();
+                    let msg_response = send_message_to_server(&mut stream, &message).await.unwrap();
                     println!("Received PING response: {}", msg_response);
 
                     // Send Listening Port to Master
                     // let message = format!("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n${}\r\n{}\r\n", repl_port.len(), repl_port);
                     let message = "*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n6380\r\n".to_string();
-                    let msg_response = send_message_to_server(&mut stream, &message).unwrap();
+                    let msg_response = send_message_to_server(&mut stream, &message).await.unwrap();
                     println!("Received Listening Port response: {}", msg_response);
 
                     // Send Capabilities to Master
                     let message = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n".to_string();
-                    let msg_response = send_message_to_server(&mut stream, &message).unwrap();
+                    let msg_response = send_message_to_server(&mut stream, &message).await.unwrap();
                     println!("Received Capabilities response: {}", msg_response);
 
                     // Send PSYNC message to Master
                     let message = "*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n".to_string();
-                    let msg_response = send_message_to_server(&mut stream, &message).unwrap();
+                    let msg_response = send_message_to_server(&mut stream, &message).await.unwrap();
                     println!("Received PSYNC response: {}", msg_response);
                 
                 }
@@ -55,7 +54,6 @@ pub fn send_replication_data(_ref_config: &Config, ref_state: &Arc<Mutex<SharedS
                     println!("Failed to connect to Master: {}", e);
                 }
             }
-
         }
         None => {
             println!("No Master to send replication data to");
