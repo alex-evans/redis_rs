@@ -92,12 +92,12 @@ pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
-async fn process_request(config_ref: &Config, mut socket: tokio::net::TcpStream, state: Arc<Mutex<SharedState>>) {
+async fn process_request(config_ref: &Config, mut stream: tokio::net::TcpStream, state: Arc<Mutex<SharedState>>) {
     println!("Handling process request");
     let mut buf = [0; 1024];
 
     loop {
-        match socket.read(&mut buf).await {
+        match stream.read(&mut buf).await {
             Ok(0) => {
                 println!("Connection closed");
                 return;
@@ -129,12 +129,14 @@ async fn process_request(config_ref: &Config, mut socket: tokio::net::TcpStream,
                 } else if request.starts_with('*') {
                     // Means it's a List
                     println!("Received List: {}", request);
-                    let response_string = list_request(config_ref, &request, &state);
-                    let response_bytes = response_string.as_bytes().try_into().unwrap();
-                    if let Err(e) = socket.write_all(response_bytes).await {
-                        println!("Failed to write to connection: {}", e);
-                        return;
-                    }
+                    list_request(config_ref, &request, &state, &mut stream);
+                    // let response_string = list_request(config_ref, &request, &state);
+                    // let response_bytes = response_string.as_bytes().try_into().unwrap();
+                    // if let Err(e) = socket.write_all(response_bytes).await {
+                    //     println!("Failed to write to connection: {}", e);
+                    //     return;
+                    // }
+                    return
                 } else {
                     println!("Unknown request format");
                 }
