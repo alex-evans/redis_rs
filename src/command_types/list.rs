@@ -22,14 +22,15 @@ pub async fn list_request(_config_ref: &Config, request: &str, state: &Arc<Mutex
     let initial_response = _initial_request(request, state);
     println!("Initial Response: {:?}", initial_response);
     let message = initial_response[0].to_string();
+    // response_string.as_bytes().try_into().unwrap();
     
     println!("Sending message to client: {}", message);
-    let _ = stream.write_all(message.as_bytes()).await;    
+    let _ = stream.write_all(message.as_bytes().try_into().unwrap()).await;    
 
     if initial_response[1] == "PSYNC" {
         let psync_message = "$0\r\n".to_string();
         println!("Sending PSYNC message to client: {}", psync_message);
-        let _ = stream.write_all(psync_message.as_bytes()).await;
+        let _ = stream.write_all(psync_message.as_bytes().try_into().unwrap()).await;
     }
 }
 
