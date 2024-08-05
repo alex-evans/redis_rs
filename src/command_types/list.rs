@@ -32,6 +32,8 @@ pub async fn list_request(_config_ref: &Config, request: &str, state: &Arc<Mutex
         println!("Sending PSYNC message to client: {}", psync_message);
         let _ = stream.write_all(psync_message.as_bytes().try_into().unwrap()).await;
     }
+
+    return
 }
 
 fn _initial_request(request: &str, state: &Arc<Mutex<SharedState>>) -> Vec<String> {
