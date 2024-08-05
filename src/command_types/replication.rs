@@ -1,20 +1,21 @@
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use tokio::net::TcpStream;
 
 use crate::Config;
 use crate::SharedState;
 use crate::helpers::helpers::send_message_to_server;
 
-pub fn store_replication(config_ref: &Config, ref_state: &Arc<Mutex<SharedState>>) -> () {
+pub async fn store_replication(config_ref: &Config, ref_state: &Arc<Mutex<SharedState>>) -> () {
     println!("Storing Replication Config");
-    let mut state = ref_state.lock().unwrap();
+    let mut state = ref_state.lock().await;
     state.store.insert("replicaof".to_string(), config_ref.replicaof.clone());
 }
 
 pub async fn send_replication_data(_ref_config: &Config, ref_state: &Arc<Mutex<SharedState>>) -> () {
     println!("Sending Replication Data");
-    let state = ref_state.lock().unwrap();
+    let state = ref_state.lock().await;
     // let repl_port: &str = &ref_config.port;
 
     println!("Replicaof: {:?}", state.store.get("replicaof"));

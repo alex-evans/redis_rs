@@ -1,7 +1,11 @@
 
-pub fn handle_replconf_request() -> String {
+use tokio::net::TcpStream;
+
+use crate::helpers::helpers::send_message_to_server;
+
+pub async fn handle_replconf_request<'a>(stream: &'a mut TcpStream) -> () {
     println!("Handling REPLCONF request");
-    let response: String = "+OK\r\n".to_string();
-    println!("Response: {}", response);
-    return response;
+    let message: String = "+OK\r\n".to_string();
+    send_message_to_server(stream, &message).await.unwrap();
+    return
 }

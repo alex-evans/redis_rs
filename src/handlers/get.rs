@@ -1,14 +1,19 @@
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use tokio::net::TcpStream;
 use std::time::SystemTime;
 
 use crate::SharedState;
-use crate::helpers::helpers::get_next_element;
+use crate::helpers::helpers::{
+    get_next_element,
+    send_message_to_server
+};
 
-pub fn handle_get_request(lines: &mut std::str::Lines, state: &Arc<Mutex<SharedState>>) -> String {
+pub async fn handle_get_request<'a>(stream: &'a mut TcpStream, lines: &'a mut std::str::Lines<'a>, state: &'a Arc<Mutex<SharedState>>) -> () {
     let key = get_next_element(lines);
     println!("Key: {}", key);
-    let state = state.lock().unwrap();
+    let state = state.lock().await;
     match state.store.get(&key) {
         Some(full_value) => {
             let parts: Vec<&str> = full_value.split("\r\n").collect();
@@ -23,14 +28,21 @@ pub fn handle_get_request(lines: &mut std::str::Lines, state: &Arc<Mutex<SharedS
 
                 let expire_time_as_u64 = expire_time.parse::<u64>().unwrap();
                 if current_time > expire_time_as_u64 {
-                    return "$-1\r\n".to_string();
+                    let message = "$-1\r\n".to_string();
+                    send_message_to_server(stream, &message).await.unwrap();
+                    return
                 }
             }
             
             let len_of_value = value.len();
-            let response = format!("${}\r\n{}\r\n", len_of_value, value);
-            return response;
+            let message = format!("${}\r\n{}\r\n", len_of_value, value);
+            send_message_to_server(stream, &message).await.unwrap();
+            return
         }
-        None => return "$-1\r\n".to_string()
+        None => {
+            let message = "$-1\r\n".to_string();
+            send_message_to_server(stream, &message).await.unwrap();
+            return
+        }
     }
 }

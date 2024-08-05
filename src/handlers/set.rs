@@ -1,18 +1,25 @@
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::{Duration, SystemTime};
+use tokio::sync::Mutex;
+use tokio::net::TcpStream;
 
 use crate::SharedState;
-use crate::helpers::helpers::get_next_element;
+use crate::helpers::helpers::{
+    get_next_element,
+    send_message_to_server
+};
 
-pub fn handle_set_request(lines: &mut std::str::Lines, state: &Arc<Mutex<SharedState>>, number_of_elements: i32) -> String {
-    let mut state = state.lock().unwrap();
+pub async fn handle_set_request<'a>(stream: &'a mut TcpStream, lines: &'a mut std::str::Lines<'a>, state: &'a Arc<Mutex<SharedState>>, number_of_elements: i32) -> () {
+    let mut state = state.lock().await;
     let key = get_next_element(lines);
     let value = get_next_element(lines);
 
     if number_of_elements == 2 {
         state.store.insert(key, value);
-        return "+OK\r\n".to_string();
+        let message = "+OK\r\n".to_string();
+        send_message_to_server(stream, &message).await.unwrap();
+        return
     }
     
     let sub_command: String = get_next_element(lines);
@@ -27,11 +34,15 @@ pub fn handle_set_request(lines: &mut std::str::Lines, state: &Arc<Mutex<SharedS
                 + expiration_duration.as_millis() as u64;
 
                 state.store.insert(key, format!("{}\r\n{}", value, expiration_time));
-                return "+OK\r\n".to_string();
+                let message = "+OK\r\n".to_string();
+                send_message_to_server(stream, &message).await.unwrap();
+                return
         },
         _ => {
             state.store.insert(key, value);
-            return "+OK\r\n".to_string();
+            let message = "+OK\r\n".to_string();
+            send_message_to_server(stream, &message).await.unwrap();
+            return
         }
     }
 
