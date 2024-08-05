@@ -1,7 +1,7 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncReadExt;
 use tokio::net::TcpListener;
 use tokio::task;
 
@@ -104,7 +104,6 @@ async fn process_request(config_ref: &Config, mut stream: tokio::net::TcpStream,
             }
             Ok(_) => {
                 let request = std::str::from_utf8(&buf).unwrap();
-                println!("We got here: {}", request);
 
                 if request.starts_with('+') {
                     // Means it's a Simple String
@@ -129,7 +128,7 @@ async fn process_request(config_ref: &Config, mut stream: tokio::net::TcpStream,
                 } else if request.starts_with('*') {
                     // Means it's a List
                     println!("Received List: {}", request);
-                    list_request(config_ref, &request, &state, &mut stream);
+                    list_request(config_ref, &request, &state, &mut stream).await;
                     // let response_string = list_request(config_ref, &request, &state);
                     // let response_bytes = response_string.as_bytes().try_into().unwrap();
                     // if let Err(e) = socket.write_all(response_bytes).await {
