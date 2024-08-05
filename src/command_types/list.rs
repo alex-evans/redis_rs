@@ -21,8 +21,13 @@ pub async fn list_request(_config_ref: &Config, request: &str, state: &Arc<Mutex
     println!("Received List Request: {}", request);
     let initial_response = _initial_request(request, state);
     println!("Initial Response: {:?}", initial_response);
-    // let message = initial_response[0].to_string();
-    let message = "+PONG\r\n".to_string();
+    if initial_response[1] == "REPLCONF" {
+        println!("Received REPLCONF request");
+        return
+    }
+
+    let message = initial_response[0].to_string();
+    // let message = "+PONG\r\n".to_string();
     // response_string.as_bytes().try_into().unwrap();
     
     println!("Sending message to client: {}", message);
