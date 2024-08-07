@@ -14,8 +14,8 @@ pub async fn handle_psync_request<'a>(stream: &'a mut TcpStream) -> () {
     let file_path = "data/fake.rdb";
     let file_contents = fs::read(file_path).unwrap();
     let file_length = file_contents.len();
-    let binary_data = base64::decode(&file_contents).unwrap();
-    let message = format!("${}\r\n{}", file_length, String::from_utf8_lossy(&binary_data));
+    let binary_data = base64::encode(&file_contents);
+    let message = format!("${}\r\n{}", file_length, binary_data);
 
     // Send the message to the server
     send_message_to_server(stream, &message).await.unwrap();
