@@ -143,7 +143,6 @@ async fn process_request(config_ref: &Config, mut stream: tokio::net::TcpStream,
                     //     println!("Failed to write to connection: {}", e);
                     //     return;
                     // }
-                    return Ok(());
                 } else {
                     println!("Unknown request format");
                     return Ok(());
