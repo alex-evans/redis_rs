@@ -114,25 +114,21 @@ async fn process_request(config_ref: &Config, mut stream: tokio::net::TcpStream,
                     let response = &request[1..request.len()-2];
                     println!("Received Simple String: {}", response);
                     // Process the response here
-                    return Ok(());
                 } else if request.starts_with('-') {
                     // Means it's an Error
                     let error = &request[1..request.len()-2];
                     println!("Received Error: {}", error);
                     // Process the error here
-                    return Ok(());
                 } else if request.starts_with(':') {
                     // Means it's an Integer
                     let integer = &request[1..request.len()-2];
                     println!("Received Integer: {}", integer);
                     // Process the integer here
-                    return Ok(());
                 } else if request.starts_with('$') {
                     // Means it's a Bulk String
                     let bulk_string = &request[1..request.len()-2];
                     println!("Received Bulk String: {}", bulk_string);
                     // Process the bulk string here
-                    return Ok(());
                 } else if request.starts_with('*') {
                     // Means it's a List
                     println!("Received List: {}", request);
@@ -146,7 +142,6 @@ async fn process_request(config_ref: &Config, mut stream: tokio::net::TcpStream,
                     // }
                 } else {
                     println!("Unknown request format");
-                    return Ok(());
                 }
             }
             Err(e) => {
