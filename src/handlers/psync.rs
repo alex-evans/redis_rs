@@ -14,10 +14,10 @@ pub async fn handle_psync_request<'a>(stream: &'a mut TcpStream) -> () {
     let file_contents = fs::read(file_path).unwrap();
     let binary_data = base64::encode(&file_contents);
     let file_length = binary_data.len();
-    let message = format!("${}\r\n", file_length);
+    let message = format!("${}\r\n{}", file_length, binary_data);
 
     send_message_to_server(stream, &message).await.unwrap();
-    send_message_to_server(stream, &binary_data).await.unwrap();
+    // send_message_to_server(stream, &binary_data).await.unwrap();
 
     println!("Finished sending PSYNC file");
     return
