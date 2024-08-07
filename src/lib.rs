@@ -93,6 +93,7 @@ pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
                 eprintln!("Failed to process request: {}", err);
             }
         });
+        println!("IM HERE");
     }
 }
 
