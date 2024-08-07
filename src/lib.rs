@@ -88,7 +88,6 @@ pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         let (stream, _) = listener.accept().await?;
         let state_clone = state.clone();
         let config_clone = config.clone();
-        // task::spawn(process_request(config_ref, stream, state_clone));
         tokio::spawn(async move {
             if let Err(err) = process_request(&config_clone, stream, state_clone).await {
                 eprintln!("Failed to process request: {}", err);

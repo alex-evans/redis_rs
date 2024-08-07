@@ -24,7 +24,7 @@ pub async fn send_replication_data(_ref_config: &Config, ref_state: &Arc<Mutex<S
             let parts: Vec<&str> = full_value.split(" ").collect();
             let master_host = parts.get(0).unwrap_or(&"");
             let master_port = parts.get(1).unwrap_or(&"");
-            let address = format!("{}:{}", master_host, master_port);
+            let address: String = format!("{}:{}", master_host, master_port);
             
             println!("Connecting to Master: {}", address);
             match TcpStream::connect(&address).await {
