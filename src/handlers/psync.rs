@@ -1,5 +1,4 @@
 
-use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 
 use crate::helpers::helpers::send_message_to_server;
@@ -15,10 +14,9 @@ pub async fn handle_psync_request<'a>(stream: &'a mut TcpStream) -> () {
     let file_contents = fs::read(file_path).unwrap();
     let file_length = file_contents.len();
     // let binary_data = base64::encode(&file_contents);
-    let message = format!("${}\r\n", file_length);
+    let message = format!("${}\r\n{:?}", file_length, file_contents);
 
     send_message_to_server(stream, &message).await.unwrap();
-    AsyncWriteExt::write_all(stream, &file_contents).await.unwrap();
 
     println!("Finished sending PSYNC file");
     return
