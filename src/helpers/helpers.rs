@@ -27,5 +27,6 @@ pub async fn send_message_to_server(stream: &mut TcpStream, message: &str) -> Re
     let mut reader = BufReader::new(stream);
     let mut response = String::new();
     AsyncBufReadExt::read_line(&mut reader, &mut response).await?;
+    println!("Received response from server: {}", response);
     Ok(response)
 }
