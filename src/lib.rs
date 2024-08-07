@@ -137,6 +137,7 @@ async fn process_request(config_ref: &Config, mut stream: tokio::net::TcpStream,
                     // Means it's a List
                     println!("Received List: {}", request);
                     list_request(config_ref, &request, &state, &mut stream).await;
+                    println!("Finished processing list request");
                     // let response_string = list_request(config_ref, &request, &state);
                     // let response_bytes = response_string.as_bytes().try_into().unwrap();
                     // if let Err(e) = socket.write_all(response_bytes).await {
