@@ -108,6 +108,7 @@ async fn process_request(config_ref: &Config, mut stream: tokio::net::TcpStream,
             }
             Ok(_) => {
                 let request = std::str::from_utf8(&buf).unwrap();
+                println!("Received request: {}", request);
 
                 if request.starts_with('+') {
                     // Means it's a Simple String
