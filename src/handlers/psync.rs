@@ -1,8 +1,10 @@
 
+use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
+use hex;
+use std::fs;
 
 use crate::helpers::helpers::send_message_to_server;
-use std::fs;
 
 pub async fn handle_psync_request<'a>(stream: &'a mut TcpStream) -> () {
     println!("Handling PSYNC request");
@@ -12,12 +14,11 @@ pub async fn handle_psync_request<'a>(stream: &'a mut TcpStream) -> () {
 
     let file_path = "data/fake.rdb";
     let file_contents = fs::read(file_path).unwrap();
-    let binary_data = base64::encode(&file_contents);
-    let file_length = binary_data.len();
-    let message = format!("${}\r\n{}", file_length, binary_data);
-
+    let empty_rdb = hex::decode(&file_contents).unwrap();
+    let empty_rdb_length = empty_rdb.len();
+    let message = format!("${}\r\n", empty_rdb_length);
     send_message_to_server(stream, &message).await.unwrap();
-    // send_message_to_server(stream, &binary_data).await.unwrap();
+    AsyncWriteExt::write_all(stream, &empty_rdb).await.unwrap();
 
     println!("Finished sending PSYNC file");
     return
