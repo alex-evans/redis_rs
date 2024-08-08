@@ -1,5 +1,5 @@
 
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncWriteExt, AsyncBufReadExt, BufReader};
 use tokio::net::TcpStream;
 
 pub fn determine_number_of_elements(line: &str) -> i32 {
@@ -24,10 +24,9 @@ pub async fn send_message_to_server(stream: &mut TcpStream, message: &str) -> Re
     println!("Sending message to server: {}", message);
     AsyncWriteExt::write_all(stream, message.as_bytes()).await?;
 
-    // let mut reader = BufReader::new(stream);
-    // let mut response = String::new();
-    // AsyncBufReadExt::read_line(&mut reader, &mut response).await?;
-    // println!("Received response from server: {}", response);
-    // Ok(response)
-    Ok("".to_string())
+    let mut reader = BufReader::new(stream);
+    let mut response = String::new();
+    AsyncBufReadExt::read_line(&mut reader, &mut response).await?;
+    println!("Received response from server: {}", response);
+    Ok(response)
 }
