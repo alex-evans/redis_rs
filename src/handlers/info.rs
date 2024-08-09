@@ -6,7 +6,7 @@ use tokio::net::TcpStream;
 use crate::SharedState;
 use crate::helpers::helpers::send_message_to_server;
 
-pub async fn handle_info_request<'a>(stream: &'a mut TcpStream, state_ref: &'a Arc<Mutex<SharedState>>) -> () {
+pub async fn handle_info_request<'a>(stream: Arc<Mutex<TcpStream>>, state_ref: &'a Arc<Mutex<SharedState>>) -> () {
     println!("Handling INFO request");
     let state = state_ref.lock().await;
     let master_replid: String = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb".to_string();

@@ -28,27 +28,38 @@ pub async fn send_replication_data(_ref_config: &Config, ref_state: &Arc<Mutex<S
             
             println!("Connecting to Master: {}", address);
             match TcpStream::connect(&address).await {
-                Ok(mut stream) => {
+                Ok(stream) => {
+                    let stream = Arc::new(Mutex::new(stream));
+                    // let mut reader = BufReader::new(stream.clone());
+                    
                     // Send PING message to Master
-                    let message = "*1\r\n$4\r\nPING\r\n".to_string();
-                    let msg_response = send_message_to_server(&mut stream, &message).await.unwrap();
-                    println!("Received PING response: {}", msg_response);
+                    {
+                        let message = "*1\r\n$4\r\nPING\r\n".to_string();
+                        let msg_response = send_message_to_server(stream.clone(), &message).await.unwrap();
+                        println!("Received PING response: {}", msg_response);
+                    }
 
                     // Send Listening Port to Master
-                    // let message = format!("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n${}\r\n{}\r\n", repl_port.len(), repl_port);
-                    let message = "*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n6380\r\n".to_string();
-                    let msg_response = send_message_to_server(&mut stream, &message).await.unwrap();
-                    println!("Received Listening Port response: {}", msg_response);
+                    {
+                        // let message = format!("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n${}\r\n{}\r\n", repl_port.len(), repl_port);
+                        let message = "*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n6380\r\n".to_string();
+                        let msg_response = send_message_to_server(stream.clone(), &message).await.unwrap();
+                        println!("Received Listening Port response: {}", msg_response);
+                    }
 
                     // Send Capabilities to Master
-                    let message = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n".to_string();
-                    let msg_response = send_message_to_server(&mut stream, &message).await.unwrap();
-                    println!("Received Capabilities response: {}", msg_response);
+                    {
+                        let message = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n".to_string();
+                        let msg_response = send_message_to_server(stream.clone(), &message).await.unwrap();
+                        println!("Received Capabilities response: {}", msg_response);
+                    }
 
                     // Send PSYNC message to Master
-                    let message = "*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n".to_string();
-                    let msg_response = send_message_to_server(&mut stream, &message).await.unwrap();
-                    println!("Received PSYNC response: {}", msg_response);
+                    {
+                        let message = "*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n".to_string();
+                        let msg_response = send_message_to_server(stream.clone(), &message).await.unwrap();
+                        println!("Received PSYNC response: {}", msg_response);
+                    }
                 
                 }
                 Err(e) => {

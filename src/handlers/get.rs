@@ -10,7 +10,7 @@ use crate::helpers::helpers::{
     send_message_to_server
 };
 
-pub async fn handle_get_request<'a>(stream: &'a mut TcpStream, lines: &'a mut std::str::Lines<'a>, state: &'a Arc<Mutex<SharedState>>) -> () {
+pub async fn handle_get_request<'a>(stream: Arc<Mutex<TcpStream>>, lines: &'a mut std::str::Lines<'a>, state: &'a Arc<Mutex<SharedState>>) -> () {
     let key = get_next_element(lines);
     println!("Key: {}", key);
     let state = state.lock().await;

@@ -1,6 +1,7 @@
-
+use std::sync::Arc;
 use tokio::io::{AsyncWriteExt, AsyncBufReadExt, BufReader};
 use tokio::net::TcpStream;
+use tokio::sync::Mutex;
 
 pub fn determine_number_of_elements(line: &str) -> i32 {
     let characters: String = line.chars().skip(1).collect();
@@ -15,18 +16,23 @@ pub fn determine_number_of_elements(line: &str) -> i32 {
 }
 
 pub fn get_next_element(lines: &mut std::str::Lines) -> String {
-    let _skip_line = lines.next().unwrap_or("");
-    let return_line = lines.next().unwrap_or("");
+    let _skip_line: &str = lines.next().unwrap_or("");
+    let return_line: &str = lines.next().unwrap_or("");
     return return_line.to_string();
 }
 
-pub async fn send_message_to_server(stream: &mut TcpStream, message: &str) -> Result<String, std::io::Error> {
+pub async fn send_message_to_server(
+    stream: Arc<Mutex<TcpStream>>, 
+    message: &str
+) -> Result<String, Box<dyn std::error::Error>> {
     println!("Sending message to server: {}", message);
-    AsyncWriteExt::write_all(stream, message.as_bytes()).await?;
+    let mut stream = stream.lock().await;
+    stream.write_all(message.as_bytes()).await?;
+    stream.flush().await?;
 
-    let mut reader = BufReader::new(stream);
-    let mut response = String::new();
-    AsyncBufReadExt::read_line(&mut reader, &mut response).await?;
+    let mut reader = BufReader::new(&mut *stream);
+    let mut response: String = String::new();
+    reader.read_line(&mut response).await?;
     println!("Received response from server: {}", response);
     Ok(response)
 }
