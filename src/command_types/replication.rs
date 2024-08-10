@@ -30,11 +30,11 @@ pub async fn send_replication_data(_ref_config: &Config, ref_state: &Arc<Mutex<S
             match TcpStream::connect(&address).await {
                 Ok(stream) => {
                     let stream = Arc::new(Mutex::new(stream));
-                    // let mut reader = BufReader::new(stream.clone());
                     
                     // Send PING message to Master
                     {
                         let message = "*1\r\n$4\r\nPING\r\n".to_string();
+                        println!("Sending PING message to Master: {}", message);
                         let msg_response = send_message_to_server(stream.clone(), &message).await.unwrap();
                         println!("Received PING response: {}", msg_response);
                     }
