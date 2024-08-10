@@ -23,16 +23,19 @@ pub fn get_next_element(lines: &mut std::str::Lines) -> String {
 
 pub async fn send_message_to_server(
     stream: Arc<Mutex<TcpStream>>, 
-    message: &str
+    message: &str,
+    wait_for_response: bool
 ) -> Result<String, Box<dyn std::error::Error>> {
     println!("Sending message to server: {}", message);
     let mut stream = stream.lock().await;
     stream.write_all(message.as_bytes()).await?;
     stream.flush().await?;
-
-    let mut reader = BufReader::new(&mut *stream);
-    let mut response: String = String::new();
-    reader.read_line(&mut response).await?;
-    println!("Received response from server: {}", response);
-    Ok(response)
+    if wait_for_response {
+        let mut reader = BufReader::new(&mut *stream);
+        let mut response: String = String::new();
+        reader.read_line(&mut response).await?;
+        println!("Received response from server: {}", response);
+        return Ok(response);
+    }
+    return Ok("".to_string());
 }

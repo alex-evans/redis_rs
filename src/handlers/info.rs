@@ -30,7 +30,7 @@ pub async fn handle_info_request<'a>(stream: Arc<Mutex<TcpStream>>, state_ref: &
         master_repl_offset
     );
 
-    send_message_to_server(stream, &message).await.unwrap();
+    send_message_to_server(stream, &message, false).await.unwrap();
     return
     
 }

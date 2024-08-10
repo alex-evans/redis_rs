@@ -29,19 +29,19 @@ pub async fn handle_get_request<'a>(stream: Arc<Mutex<TcpStream>>, lines: &'a mu
                 let expire_time_as_u64 = expire_time.parse::<u64>().unwrap();
                 if current_time > expire_time_as_u64 {
                     let message = "$-1\r\n".to_string();
-                    send_message_to_server(stream, &message).await.unwrap();
+                    send_message_to_server(stream, &message, false).await.unwrap();
                     return
                 }
             }
             
             let len_of_value = value.len();
             let message = format!("${}\r\n{}\r\n", len_of_value, value);
-            send_message_to_server(stream, &message).await.unwrap();
+            send_message_to_server(stream, &message, false).await.unwrap();
             return
         }
         None => {
             let message = "$-1\r\n".to_string();
-            send_message_to_server(stream, &message).await.unwrap();
+            send_message_to_server(stream, &message, false).await.unwrap();
             return
         }
     }

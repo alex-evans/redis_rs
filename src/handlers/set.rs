@@ -18,7 +18,7 @@ pub async fn handle_set_request<'a>(stream: Arc<Mutex<TcpStream>>, lines: &'a mu
     if number_of_elements == 2 {
         state.store.insert(key, value);
         let message = "+OK\r\n".to_string();
-        send_message_to_server(stream, &message).await.unwrap();
+        send_message_to_server(stream, &message, false).await.unwrap();
         return
     }
     
@@ -35,13 +35,13 @@ pub async fn handle_set_request<'a>(stream: Arc<Mutex<TcpStream>>, lines: &'a mu
 
                 state.store.insert(key, format!("{}\r\n{}", value, expiration_time));
                 let message = "+OK\r\n".to_string();
-                send_message_to_server(stream, &message).await.unwrap();
+                send_message_to_server(stream, &message, false).await.unwrap();
                 return
         },
         _ => {
             state.store.insert(key, value);
             let message = "+OK\r\n".to_string();
-            send_message_to_server(stream, &message).await.unwrap();
+            send_message_to_server(stream, &message, false).await.unwrap();
             return
         }
     }
