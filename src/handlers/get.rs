@@ -7,10 +7,10 @@ use std::time::SystemTime;
 use crate::SharedState;
 use crate::helpers::helpers::{
     get_next_element,
-    send_message_to_server_arc
+    send_message_to_server
 };
 
-pub async fn handle_get_request<'a>(stream: Arc<Mutex<TcpStream>>, lines: &'a mut std::str::Lines<'a>, state: &'a Arc<Mutex<SharedState>>) -> () {
+pub async fn handle_get_request<'a>(stream: &'a mut TcpStream, lines: &'a mut std::str::Lines<'a>, state: &'a Arc<Mutex<SharedState>>) -> () {
     let key = get_next_element(lines);
     println!("Key: {}", key);
     let state = state.lock().await;
@@ -29,19 +29,19 @@ pub async fn handle_get_request<'a>(stream: Arc<Mutex<TcpStream>>, lines: &'a mu
                 let expire_time_as_u64 = expire_time.parse::<u64>().unwrap();
                 if current_time > expire_time_as_u64 {
                     let message = "$-1\r\n".to_string();
-                    send_message_to_server_arc(stream, &message, false).await.unwrap();
+                    send_message_to_server(stream, &message, false).await.unwrap();
                     return
                 }
             }
             
             let len_of_value = value.len();
             let message = format!("${}\r\n{}\r\n", len_of_value, value);
-            send_message_to_server_arc(stream, &message, false).await.unwrap();
+            send_message_to_server(stream, &message, false).await.unwrap();
             return
         }
         None => {
             let message = "$-1\r\n".to_string();
-            send_message_to_server_arc(stream, &message, false).await.unwrap();
+            send_message_to_server(stream, &message, false).await.unwrap();
             return
         }
     }

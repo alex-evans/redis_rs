@@ -1,12 +1,10 @@
-use std::sync::Arc;
 use tokio::net::TcpStream;
-use tokio::sync::Mutex;
 
-use crate::helpers::helpers::send_message_to_server_arc;
+use crate::helpers::helpers::send_message_to_server;
 
-pub async fn handle_ping_request(stream: Arc<Mutex<TcpStream>>) -> () {
+pub async fn handle_ping_request<'a>(stream: &'a mut TcpStream) -> () {
     println!("Handling PING request");
     let ping_response: String = "+PONG\r\n".to_string();
-    send_message_to_server_arc(stream, &ping_response, false).await.unwrap();
+    send_message_to_server(stream, &ping_response, false).await.unwrap();
     println!("Sent PONG response to client");
 }

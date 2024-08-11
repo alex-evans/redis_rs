@@ -97,16 +97,14 @@ pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 
 async fn process_request(
     config_ref: &Config, 
-    stream: tokio::net::TcpStream, 
+    mut stream: tokio::net::TcpStream, 
     state: Arc<Mutex<SharedState>>
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("Handling process request");
-    let stream = Arc::new(Mutex::new(stream));
     let mut buf = [0; 1024];
 
     loop {
-        let mut stream_lock = stream.lock().await;
-        match stream_lock.read(&mut buf).await {
+        match stream.read(&mut buf).await {
             Ok(0) => {
                 println!("Connection closed");
                 return Ok(());
@@ -138,7 +136,7 @@ async fn process_request(
                 } else if request.starts_with('*') {
                     // Means it's a List
                     println!("Received List: {}", request);
-                    list_request(config_ref, &request, &state, stream.clone()).await;
+                    list_request(config_ref, &request, &state, &mut stream).await;
                     println!("Finished processing list request");
                     // let response_string = list_request(config_ref, &request, &state);
                     // let response_bytes = response_string.as_bytes().try_into().unwrap();

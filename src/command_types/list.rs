@@ -18,7 +18,7 @@ use crate::helpers::helpers::{
     get_next_element
 };
 
-pub async fn list_request(_config_ref: &Config, request: &str, state: &Arc<Mutex<SharedState>>, stream: Arc<Mutex<TcpStream>>) -> () {
+pub async fn list_request(_config_ref: &Config, request: &str, state: &Arc<Mutex<SharedState>>, stream: &mut TcpStream) -> () {
     println!("Received List Request: {}", request);
     let mut lines = request.lines();
     let first_line = lines.next().unwrap();
@@ -29,13 +29,13 @@ pub async fn list_request(_config_ref: &Config, request: &str, state: &Arc<Mutex
     } 
     let element_one = get_next_element(&mut lines);
     match element_one.to_uppercase().as_str() {
-        "ECHO" => handle_echo_request(stream.clone(), &mut lines).await,
-        "PING" => handle_ping_request(stream.clone()).await,
-        "SET" => handle_set_request(stream.clone(), &mut lines, state, number_of_elements).await,
-        "GET" => handle_get_request(stream.clone(), &mut lines, state).await,
-        "INFO" => handle_info_request(stream.clone(), state).await,
-        "REPLCONF" => handle_replconf_request(stream.clone()).await, 
-        "PSYNC" => handle_psync_request(stream.clone()).await,
+        "ECHO" => handle_echo_request(stream, &mut lines).await,
+        "PING" => handle_ping_request(stream).await,
+        "SET" => handle_set_request(stream, &mut lines, state, number_of_elements).await,
+        "GET" => handle_get_request(stream, &mut lines, state).await,
+        "INFO" => handle_info_request(stream, state).await,
+        "REPLCONF" => handle_replconf_request(stream).await, 
+        "PSYNC" => handle_psync_request(stream).await,
         _ => println!("-ERR Invalid request")
     };
 
