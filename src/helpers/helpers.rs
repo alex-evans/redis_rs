@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use tokio::io::{AsyncWriteExt, AsyncBufReadExt, BufReader};
 use tokio::net::TcpStream;
+// use tokio::stream;
 use tokio::sync::Mutex;
 
 pub fn determine_number_of_elements(line: &str) -> i32 {
@@ -22,14 +23,14 @@ pub fn get_next_element(lines: &mut std::str::Lines) -> String {
 }
 
 pub async fn send_message_to_server(
-    stream: Arc<Mutex<TcpStream>>, 
+    stream: &mut TcpStream,
     message: &str,
     wait_for_response: bool
 ) -> Result<String, Box<dyn std::error::Error>> {
     println!("Sending message to server: {}", message);
-    let mut stream = stream.lock().await;
     stream.write_all(message.as_bytes()).await?;
     stream.flush().await?;
+
     if wait_for_response {
         let mut reader = BufReader::new(&mut *stream);
         let mut response: String = String::new();
@@ -37,5 +38,14 @@ pub async fn send_message_to_server(
         println!("Received response from server: {}", response);
         return Ok(response);
     }
-    return Ok("".to_string());
+    return Ok(String::new());
+}
+
+pub async fn send_message_to_server_arc(
+    stream: Arc<Mutex<TcpStream>>,
+    message: &str,
+    wait_for_response: bool
+) -> Result<String, Box<dyn std::error::Error>> {
+    let mut stream = stream.lock().await;
+    send_message_to_server(&mut *stream, message, wait_for_response).await
 }

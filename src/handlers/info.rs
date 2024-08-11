@@ -4,7 +4,7 @@ use tokio::sync::Mutex;
 use tokio::net::TcpStream;
 
 use crate::SharedState;
-use crate::helpers::helpers::send_message_to_server;
+use crate::helpers::helpers::send_message_to_server_arc;
 
 pub async fn handle_info_request<'a>(stream: Arc<Mutex<TcpStream>>, state_ref: &'a Arc<Mutex<SharedState>>) -> () {
     println!("Handling INFO request");
@@ -30,7 +30,7 @@ pub async fn handle_info_request<'a>(stream: Arc<Mutex<TcpStream>>, state_ref: &
         master_repl_offset
     );
 
-    send_message_to_server(stream, &message, false).await.unwrap();
+    send_message_to_server_arc(stream, &message, false).await.unwrap();
     return
     
 }
