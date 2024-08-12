@@ -3,7 +3,6 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::net::TcpStream;
 
-use crate::Config;
 use crate::SharedState;
 use crate::handlers::echo::handle_echo_request;
 use crate::handlers::get::handle_get_request;
@@ -18,7 +17,7 @@ use crate::helpers::helpers::{
     get_next_element
 };
 
-pub async fn list_request(_config_ref: &Config, request: &str, state: &Arc<Mutex<SharedState>>, stream: &mut TcpStream) -> () {
+pub async fn list_request(request: &str, state: &Arc<Mutex<SharedState>>, stream: &mut TcpStream) -> () {
     println!("Received List Request: {}", request);
     let mut lines = request.lines();
     let first_line = lines.next().unwrap();
@@ -31,7 +30,7 @@ pub async fn list_request(_config_ref: &Config, request: &str, state: &Arc<Mutex
     match element_one.to_uppercase().as_str() {
         "ECHO" => handle_echo_request(stream, &mut lines).await,
         "PING" => handle_ping_request(stream).await,
-        "SET" => handle_set_request(stream, &mut lines, state, number_of_elements).await,
+        "SET" => handle_set_request(stream, &mut lines, state, number_of_elements, request).await,
         "GET" => handle_get_request(stream, &mut lines, state).await,
         "INFO" => handle_info_request(stream, state).await,
         "REPLCONF" => handle_replconf_request(stream).await, 

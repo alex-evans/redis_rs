@@ -7,10 +7,17 @@ use tokio::net::TcpStream;
 use crate::SharedState;
 use crate::helpers::helpers::{
     get_next_element,
-    send_message_to_server
+    send_message_to_server,
+    send_data_to_replica
 };
 
-pub async fn handle_set_request<'a>(stream: &'a mut TcpStream, lines: &'a mut std::str::Lines<'a>, state: &'a Arc<Mutex<SharedState>>, number_of_elements: i32) -> () {
+pub async fn handle_set_request<'a>(
+    stream: &'a mut TcpStream, 
+    lines: &'a mut std::str::Lines<'a>, 
+    state: &'a Arc<Mutex<SharedState>>, 
+    number_of_elements: i32, 
+    request: &str, 
+) -> () {
     let mut state = state.lock().await;
     let key = get_next_element(lines);
     let value = get_next_element(lines);
@@ -36,12 +43,14 @@ pub async fn handle_set_request<'a>(stream: &'a mut TcpStream, lines: &'a mut st
                 state.store.insert(key, format!("{}\r\n{}", value, expiration_time));
                 let message = "+OK\r\n".to_string();
                 send_message_to_server(stream, &message, false).await.unwrap();
+                send_data_to_replica(&mut state, request).await;
                 return
         },
         _ => {
             state.store.insert(key, value);
             let message = "+OK\r\n".to_string();
             send_message_to_server(stream, &message, false).await.unwrap();
+            send_data_to_replica(&mut state, request).await;
             return
         }
     }

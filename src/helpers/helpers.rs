@@ -2,6 +2,9 @@ use std::sync::Arc;
 use tokio::io::{AsyncWriteExt, AsyncBufReadExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
+use tokio::sync::MutexGuard;
+
+use crate::SharedState;
 
 pub fn determine_number_of_elements(line: &str) -> i32 {
     let characters: String = line.chars().skip(1).collect();
@@ -47,4 +50,36 @@ pub async fn send_message_to_server_arc(
 ) -> Result<String, Box<dyn std::error::Error>> {
     let mut stream = stream.lock().await;
     send_message_to_server(&mut *stream, message, wait_for_response).await
+}
+
+pub async fn send_data_to_replica<'a>(
+    state: &'a mut MutexGuard<'_, SharedState>,
+    request: &str
+) -> () {
+    println!("Sending data to replica");
+    match state.store.get("replicaof") {
+        Some(full_value) => {
+            let parts: Vec<&str> = full_value.split(" ").collect();
+            let master_host = parts.get(0).unwrap_or(&"");
+            let master_port = parts.get(1).unwrap_or(&"");
+            let address: String = format!("{}:{}", master_host, master_port);
+            
+            println!("Connecting to Master: {}", address);
+            match TcpStream::connect(&address).await {
+                Ok(stream) => {
+                    let stream = Arc::new(Mutex::new(stream));
+                    
+                    // Send Request to Replica
+                    send_message_to_server_arc(stream.clone(), &request, false).await.unwrap();
+
+                },
+                Err(e) => {
+                    println!("Error connecting to Master: {:?}", e);
+                }
+            }
+        },
+        None => {
+            println!("No replicaof value found");
+        }
+    }
 }
