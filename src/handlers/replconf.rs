@@ -22,22 +22,19 @@ pub async fn handle_replconf_request<'a>(
     println!("ADE Sub Value: {}", sub_value);
 
     if sub_command.to_uppercase() == "LISTENING-PORT" {
-        let master_host: Option<String>;
-        {
-            let state = state.lock().await;
-            master_host = state.store.get("replicaof").map(|full_value| {
-                let parts: Vec<&str> = full_value.split(" ").collect();
-                parts.get(0).unwrap_or(&"").to_string()
-            });
-        }
+        let current_host = "127.0.0.1".to_string(); 
+        // let master_host: Option<String>;
+        // {
+        //     let state = state.lock().await;
+        //     master_host = state.store.get("replicaof").map(|full_value| {
+        //         let parts: Vec<&str> = full_value.split(" ").collect();
+        //         parts.get(0).unwrap_or(&"").to_string()
+        //     });
+        // }
 
-        if let Some(master_host) = master_host {
-            let mut state = state.lock().await;
-            state.store.insert("repl1-listening-host".to_string(), master_host);
-            state.store.insert("repl1-listening-port".to_string(), sub_value);
-        } else {
-            println!("Invalid listening-port command");
-        }
+        let mut state = state.lock().await;
+        state.store.insert("repl1-listening-host".to_string(), current_host);
+        state.store.insert("repl1-listening-port".to_string(), sub_value);
     }
 
     let message: String = "+OK\r\n".to_string();
