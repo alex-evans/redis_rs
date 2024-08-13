@@ -32,7 +32,7 @@ pub async fn handle_set_request<'a>(
     if number_of_elements == 2 {
         state_guard.store.insert(key, value);
         let message = "+OK\r\n".to_string();
-        send_message_to_server(stream, &message, false).await.unwrap();
+        send_message_to_server(stream, &message, true).await.unwrap();
         if let Err(e) = send_message_to_server(stream, &repl_command, false).await {
             eprintln!("Error sending request: {}", e);
         }
