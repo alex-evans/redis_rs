@@ -16,18 +16,20 @@ pub async fn handle_set_request<'a>(
     lines: &'a mut std::str::Lines<'a>, 
     state: &'a Arc<Mutex<SharedState>>, 
     number_of_elements: i32, 
-    _request: &str, 
+    request: &str, 
 ) -> () {
     let mut state_guard = state.lock().await;
     let key = get_next_element(lines);
     let value = get_next_element(lines);
     let repl_command = format!(
-        "$3\r\nSET\r\n${}\r\n{}\r\n${}\r\n{}\r\n",
+        "*3\r\n$3\r\nSET\r\n${}\r\n{}\r\n${}\r\n{}\r\n",
         key.len(),
         key,
         value.len(),
         value
     );
+    println!("This is the REQUEST: {}", request);
+    println!("Done");
 
     if number_of_elements == 2 {
         state_guard.store.insert(key, value);
