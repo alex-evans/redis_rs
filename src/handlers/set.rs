@@ -18,12 +18,12 @@ pub async fn handle_set_request<'a>(
     number_of_elements: i32, 
     request: &str, 
 ) -> () {
-    let mut state = state.lock().await;
+    let mut state_guard = state.lock().await;
     let key = get_next_element(lines);
     let value = get_next_element(lines);
 
     if number_of_elements == 2 {
-        state.store.insert(key, value);
+        state_guard.store.insert(key, value);
         let message = "+OK\r\n".to_string();
         send_message_to_server(stream, &message, false).await.unwrap();
         return
@@ -40,17 +40,17 @@ pub async fn handle_set_request<'a>(
                 .as_millis() as u64
                 + expiration_duration.as_millis() as u64;
 
-                state.store.insert(key, format!("{}\r\n{}", value, expiration_time));
+                state_guard.store.insert(key, format!("{}\r\n{}", value, expiration_time));
                 let message = "+OK\r\n".to_string();
                 send_message_to_server(stream, &message, false).await.unwrap();
-                send_data_to_replica(&mut state, request).await;
+                send_data_to_replica(state, request).await;
                 return
         },
         _ => {
-            state.store.insert(key, value);
+            state_guard.store.insert(key, value);
             let message = "+OK\r\n".to_string();
             send_message_to_server(stream, &message, false).await.unwrap();
-            send_data_to_replica(&mut state, request).await;
+            send_data_to_replica(state, request).await;
             return
         }
     }

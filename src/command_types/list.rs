@@ -33,7 +33,7 @@ pub async fn list_request(request: &str, state: &Arc<Mutex<SharedState>>, stream
         "SET" => handle_set_request(stream, &mut lines, state, number_of_elements, request).await,
         "GET" => handle_get_request(stream, &mut lines, state).await,
         "INFO" => handle_info_request(stream, state).await,
-        "REPLCONF" => handle_replconf_request(stream).await, 
+        "REPLCONF" => handle_replconf_request(stream, &mut lines, state).await, 
         "PSYNC" => handle_psync_request(stream).await,
         _ => println!("-ERR Invalid request")
     };
