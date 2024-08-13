@@ -17,7 +17,9 @@ pub async fn handle_replconf_request<'a>(
 
     println!("Handling REPLCONF request");
     let sub_command: String = get_next_element(lines);
+    println!("ADE Sub Command: {}", sub_command);
     let sub_value: String = get_next_element(lines);
+    println!("ADE Sub Value: {}", sub_value);
 
     if sub_command.to_uppercase() == "LISTENING-PORT" {
         let master_host: Option<String>;
@@ -34,7 +36,7 @@ pub async fn handle_replconf_request<'a>(
             state.store.insert("repl1-listening-host".to_string(), master_host);
             state.store.insert("repl1-listening-port".to_string(), sub_value);
         } else {
-            println!("No Master to send replication data to");
+            println!("Invalid listening-port command");
         }
     }
 
