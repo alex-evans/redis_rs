@@ -7,8 +7,8 @@ use tokio::net::TcpStream;
 use crate::SharedState;
 use crate::helpers::helpers::{
     get_next_element,
-    send_message_to_server,
-    send_data_to_replica
+    send_message_to_server
+    // send_data_to_replica
 };
 
 pub async fn handle_set_request<'a>(
@@ -43,16 +43,20 @@ pub async fn handle_set_request<'a>(
                 state_guard.store.insert(key, format!("{}\r\n{}", value, expiration_time));
                 let message = "+OK\r\n".to_string();
                 send_message_to_server(stream, &message, false).await.unwrap();
-                drop(state_guard);
-                send_data_to_replica(state, request).await;
+                // drop(state_guard);
+                // send_data_to_replica(state, request).await;
+                let replica_request_msg = format!("*3\r\n{}", request);
+                send_message_to_server(stream, &replica_request_msg, false).await.unwrap();
                 return
         },
         _ => {
             state_guard.store.insert(key, value);
             let message = "+OK\r\n".to_string();
             send_message_to_server(stream, &message, false).await.unwrap();
-            drop(state_guard);
-            send_data_to_replica(state, request).await;
+            // drop(state_guard);
+            // send_data_to_replica(state, request).await;
+            let replica_request_msg = format!("*3\r\n{}", request);
+            send_message_to_server(stream, &replica_request_msg, false).await.unwrap();
             return
         }
     }
