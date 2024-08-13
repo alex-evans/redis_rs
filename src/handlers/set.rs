@@ -42,23 +42,27 @@ pub async fn handle_set_request<'a>(
 
                 state_guard.store.insert(key, format!("{}\r\n{}", value, expiration_time));
                 let message = "+OK\r\n".to_string();
-                send_message_to_server(stream, &message, false).await.unwrap();
-                // drop(state_guard);
-                // send_data_to_replica(state, request).await;
-                // let replica_request_msg = format!("*3\r\n{}", request);
-                // println!("Replica Request: {}", replica_request_msg);
-                send_message_to_server(stream, &request, false).await.unwrap();
+                // send_message_to_server(stream, &message, false).await.unwrap();
+                // send_message_to_server(stream, &request, false).await.unwrap();
+                if let Err(e) = send_message_to_server(stream, &message, false).await {
+                    eprintln!("Error sending message: {}", e);
+                }
+                if let Err(e) = send_message_to_server(stream, &request, false).await {
+                    eprintln!("Error sending request: {}", e);
+                }
                 return
         },
         _ => {
             state_guard.store.insert(key, value);
             let message = "+OK\r\n".to_string();
-            send_message_to_server(stream, &message, false).await.unwrap();
-            // drop(state_guard);
-            // send_data_to_replica(state, request).await;
-            // let replica_request_msg = format!("*3\r\n{}", request);
-            // println!("Replica Request: {}", replica_request_msg);
-            send_message_to_server(stream, &request, false).await.unwrap();
+            // send_message_to_server(stream, &message, false).await.unwrap();
+            // send_message_to_server(stream, &request, false).await.unwrap();
+            if let Err(e) = send_message_to_server(stream, &message, false).await {
+                eprintln!("Error sending message: {}", e);
+            }
+            if let Err(e) = send_message_to_server(stream, &request, false).await {
+                eprintln!("Error sending request: {}", e);
+            }
             return
         }
     }
