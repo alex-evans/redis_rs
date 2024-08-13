@@ -58,10 +58,10 @@ pub async fn handle_set_request<'a>(
             if let Err(e) = send_message_to_server(stream, &message, true).await {
                 eprintln!("Error sending message: {}", e);
             }
-            println!("Would be Sending request: {}", request);
-            // if let Err(e) = send_message_to_server(stream, &request, true).await {
-            //     eprintln!("Error sending request: {}", e);
-            // }
+            println!("ADE Sending request: {}", request);
+            if let Err(e) = send_message_to_server(stream, &request, true).await {
+                eprintln!("Error sending request: {}", e);
+            }
             return
         }
     }
