@@ -52,8 +52,6 @@ pub async fn handle_set_request<'a>(
 
                 state_guard.store.insert(key, format!("{}\r\n{}", value, expiration_time));
                 let message = "+OK\r\n".to_string();
-                // send_message_to_server(stream, &message, false).await.unwrap();
-                // send_message_to_server(stream, &request, false).await.unwrap();
                 if let Err(e) = send_message_to_server(stream, &message, true).await {
                     eprintln!("Error sending message: {}", e);
                 }
@@ -68,6 +66,7 @@ pub async fn handle_set_request<'a>(
             if let Err(e) = send_message_to_server(stream, &message, true).await {
                 eprintln!("Error sending message: {}", e);
             }
+            println!("Repl Command: {}", repl_command);
             if let Err(e) = send_message_to_server(stream, &repl_command, false).await {
                 eprintln!("Error sending request: {}", e);
             }
