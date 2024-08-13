@@ -22,7 +22,7 @@ pub async fn handle_set_request<'a>(
     let key = get_next_element(lines);
     let value = get_next_element(lines);
     let repl_command = format!(
-        "*3\r\n$3\r\nSET\r\n${}\r\n{}\r\n${}\r\n{}\r\n",
+        "$3\r\nSET\r\n${}\r\n{}\r\n${}\r\n{}\r\n",
         key.len(),
         key,
         value.len(),
@@ -33,7 +33,6 @@ pub async fn handle_set_request<'a>(
         state_guard.store.insert(key, value);
         let message = "+OK\r\n".to_string();
         send_message_to_server(stream, &message, true).await.unwrap();
-        println!("We here 1");
         if let Err(e) = send_message_to_server(stream, &repl_command, false).await {
             eprintln!("Error sending request: {}", e);
         }
@@ -56,7 +55,6 @@ pub async fn handle_set_request<'a>(
                 if let Err(e) = send_message_to_server(stream, &message, true).await {
                     eprintln!("Error sending message: {}", e);
                 }
-                println!("We here 2");
                 if let Err(e) = send_message_to_server(stream, &repl_command, false).await {
                     eprintln!("Error sending request: {}", e);
                 }
@@ -68,7 +66,6 @@ pub async fn handle_set_request<'a>(
             if let Err(e) = send_message_to_server(stream, &message, true).await {
                 eprintln!("Error sending message: {}", e);
             }
-            println!("We here 3");
             println!("Repl Command: {}", repl_command);
             if let Err(e) = send_message_to_server(stream, &repl_command, false).await {
                 eprintln!("Error sending request: {}", e);
