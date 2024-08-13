@@ -45,9 +45,9 @@ pub async fn handle_set_request<'a>(
                 send_message_to_server(stream, &message, false).await.unwrap();
                 // drop(state_guard);
                 // send_data_to_replica(state, request).await;
-                let replica_request_msg = format!("*3\r\n{}", request);
-                println!("Replica Request: {}", replica_request_msg);
-                send_message_to_server(stream, &replica_request_msg, false).await.unwrap();
+                // let replica_request_msg = format!("*3\r\n{}", request);
+                // println!("Replica Request: {}", replica_request_msg);
+                send_message_to_server(stream, &request, false).await.unwrap();
                 return
         },
         _ => {
@@ -56,9 +56,9 @@ pub async fn handle_set_request<'a>(
             send_message_to_server(stream, &message, false).await.unwrap();
             // drop(state_guard);
             // send_data_to_replica(state, request).await;
-            let replica_request_msg = format!("*3\r\n{}", request);
-            println!("Replica Request: {}", replica_request_msg);
-            send_message_to_server(stream, &replica_request_msg, false).await.unwrap();
+            // let replica_request_msg = format!("*3\r\n{}", request);
+            // println!("Replica Request: {}", replica_request_msg);
+            send_message_to_server(stream, &request, false).await.unwrap();
             return
         }
     }
