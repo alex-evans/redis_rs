@@ -44,10 +44,10 @@ pub async fn handle_set_request<'a>(
                 let message = "+OK\r\n".to_string();
                 // send_message_to_server(stream, &message, false).await.unwrap();
                 // send_message_to_server(stream, &request, false).await.unwrap();
-                if let Err(e) = send_message_to_server(stream, &message, false).await {
+                if let Err(e) = send_message_to_server(stream, &message, true).await {
                     eprintln!("Error sending message: {}", e);
                 }
-                if let Err(e) = send_message_to_server(stream, &request, false).await {
+                if let Err(e) = send_message_to_server(stream, &request, true).await {
                     eprintln!("Error sending request: {}", e);
                 }
                 return
@@ -55,11 +55,10 @@ pub async fn handle_set_request<'a>(
         _ => {
             state_guard.store.insert(key, value);
             let message = "+OK\r\n".to_string();
-            // send_message_to_server(stream, &message, false).await.unwrap();
-            // send_message_to_server(stream, &request, false).await.unwrap();
             if let Err(e) = send_message_to_server(stream, &message, true).await {
                 eprintln!("Error sending message: {}", e);
             }
+            println!("Sending request: {}", request);
             if let Err(e) = send_message_to_server(stream, &request, true).await {
                 eprintln!("Error sending request: {}", e);
             }
