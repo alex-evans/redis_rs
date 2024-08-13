@@ -16,18 +16,24 @@ pub async fn handle_set_request<'a>(
     lines: &'a mut std::str::Lines<'a>, 
     state: &'a Arc<Mutex<SharedState>>, 
     number_of_elements: i32, 
-    request: &str, 
+    _request: &str, 
 ) -> () {
     let mut state_guard = state.lock().await;
     let key = get_next_element(lines);
     let value = get_next_element(lines);
+    let repl_command = format!(
+        "*3\r\n$3\r\nSET\r\n${}\r\n{}\r\n${}\r\n{}\r\n",
+        key.len(),
+        key,
+        value.len(),
+        value
+    );
 
     if number_of_elements == 2 {
         state_guard.store.insert(key, value);
         let message = "+OK\r\n".to_string();
         send_message_to_server(stream, &message, false).await.unwrap();
-        println!("ADE Sending request num eles is 2: {}", request);
-        if let Err(e) = send_message_to_server(stream, &request, false).await {
+        if let Err(e) = send_message_to_server(stream, &repl_command, false).await {
             eprintln!("Error sending request: {}", e);
         }
         return
@@ -51,7 +57,7 @@ pub async fn handle_set_request<'a>(
                 if let Err(e) = send_message_to_server(stream, &message, true).await {
                     eprintln!("Error sending message: {}", e);
                 }
-                if let Err(e) = send_message_to_server(stream, &request, false).await {
+                if let Err(e) = send_message_to_server(stream, &repl_command, false).await {
                     eprintln!("Error sending request: {}", e);
                 }
                 return
@@ -62,8 +68,7 @@ pub async fn handle_set_request<'a>(
             if let Err(e) = send_message_to_server(stream, &message, true).await {
                 eprintln!("Error sending message: {}", e);
             }
-            println!("ADE Sending request: {}", request);
-            if let Err(e) = send_message_to_server(stream, &request, false).await {
+            if let Err(e) = send_message_to_server(stream, &repl_command, false).await {
                 eprintln!("Error sending request: {}", e);
             }
             return
