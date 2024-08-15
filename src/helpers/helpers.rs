@@ -2,9 +2,9 @@ use std::sync::Arc;
 use tokio::io::{AsyncWriteExt, AsyncBufReadExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
-// use tokio::sync::MutexGuard;
+use tokio::sync::MutexGuard;
 
-// use crate::SharedState;
+use crate::SharedState;
 
 pub fn determine_number_of_elements(line: &str) -> i32 {
     let characters: String = line.chars().skip(1).collect();
@@ -52,31 +52,31 @@ pub async fn send_message_to_server_arc(
     send_message_to_server(&mut *stream, message, wait_for_response).await
 }
 
-// pub async fn send_data_to_replica<'a>(
-//     state: &'a Arc<Mutex<SharedState>>,
-//     request: &str
-// ) -> () {
-//     println!("Sending data to replica");
-//     let state: MutexGuard<SharedState> = state.lock().await;
-//     for (key, value) in state.store.iter() {
-//         println!("ADE Key: {}, Value: {}", key, value);
-//     }
-//     let repl1_host = state.store.get("repl1-listening-host").cloned().unwrap_or_default();
-//     let repl1_port = state.store.get("repl1-listening-port").cloned().unwrap_or_default();
-//     let repl1_address: String = format!("{}:{}", repl1_host, repl1_port);
-//     println!("Connecting to Replica: {}", repl1_address);
-//     match TcpStream::connect(&repl1_address).await {
-//         Ok(stream) => {
-//             let stream = Arc::new(Mutex::new(stream));
+pub async fn send_data_to_replica<'a>(
+    state: &'a Arc<Mutex<SharedState>>,
+    request: &str
+) -> () {
+    println!("Sending data to replica");
+    let state: MutexGuard<SharedState> = state.lock().await;
+    for (key, value) in state.store.iter() {
+        println!("ADE Key: {}, Value: {}", key, value);
+    }
+    let repl1_host = state.store.get("repl1-listening-host").cloned().unwrap_or_default();
+    let repl1_port = state.store.get("repl1-listening-port").cloned().unwrap_or_default();
+    let repl1_address: String = format!("{}:{}", repl1_host, repl1_port);
+    println!("Connecting to Replica: {}", repl1_address);
+    match TcpStream::connect(&repl1_address).await {
+        Ok(stream) => {
+            let stream = Arc::new(Mutex::new(stream));
             
-//             // Send Request to Replica
-//             let message = format!("*3\r\n{}", request);
-//             send_message_to_server_arc(stream.clone(), &message, false).await.unwrap();
+            // Send Request to Replica
+            let message = format!("*3\r\n{}", request);
+            send_message_to_server_arc(stream.clone(), &message, false).await.unwrap();
 
-//         },
-//         Err(e) => {
-//             println!("Error connecting to Replica: {:?}", e);
-//         }
-//     }
+        },
+        Err(e) => {
+            println!("Error connecting to Replica: {:?}", e);
+        }
+    }
 
-// }
+}
