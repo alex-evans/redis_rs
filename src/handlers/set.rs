@@ -64,10 +64,10 @@ pub async fn handle_set_request<'a>(
         },
         _ => {
             state_guard.store.insert(key, value);
-            let message = "+OK\r\n".to_string();
             
             send_data_to_replica(state, &repl_command).await;
 
+            let message = "+OK\r\n".to_string();
             if let Err(e) = send_message_to_server(stream, &message, true).await {
                 eprintln!("Error sending message: {}", e);
             }
