@@ -32,12 +32,14 @@ pub async fn handle_set_request<'a>(
     println!("Done");
 
     if number_of_elements == 2 {
+        println!("Actually we be here 0");
         state_guard.store.insert(key, value);
-
+        println!("Actually we be here 1");
         send_data_to_replica(state, &repl_command).await;
-
+        println!("Actually we be here 2");
         let message = "+OK\r\n".to_string();
         send_message_to_server(stream, &message, true).await.unwrap();
+        println!("Actually we be here 3");
         return
     }
     
