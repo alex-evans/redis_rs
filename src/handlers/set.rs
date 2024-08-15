@@ -33,9 +33,11 @@ pub async fn handle_set_request<'a>(
 
     if number_of_elements == 2 {
         state_guard.store.insert(key, value);
+
+        send_data_to_replica(state, &repl_command).await;
+
         let message = "+OK\r\n".to_string();
         send_message_to_server(stream, &message, true).await.unwrap();
-        send_data_to_replica(state, &repl_command).await;
         return
     }
     
@@ -51,20 +53,25 @@ pub async fn handle_set_request<'a>(
                 + expiration_duration.as_millis() as u64;
 
                 state_guard.store.insert(key, format!("{}\r\n{}", value, expiration_time));
+                
+                send_data_to_replica(state, &repl_command).await;
+                
                 let message = "+OK\r\n".to_string();
                 if let Err(e) = send_message_to_server(stream, &message, true).await {
                     eprintln!("Error sending message: {}", e);
                 }
-                send_data_to_replica(state, &repl_command).await;
                 return
         },
         _ => {
             state_guard.store.insert(key, value);
             let message = "+OK\r\n".to_string();
+            
+            send_data_to_replica(state, &repl_command).await;
+
             if let Err(e) = send_message_to_server(stream, &message, true).await {
                 eprintln!("Error sending message: {}", e);
             }
-            send_data_to_replica(state, &repl_command).await;
+
             return
         }
     }
