@@ -55,11 +55,12 @@ pub async fn handle_set_request<'a>(
                 + expiration_duration.as_millis() as u64;
 
                 state_guard.store.insert(key, format!("{}\r\n{}", value, expiration_time));
-                
+                println!("Ummm we be here 0");
                 send_data_to_replica(state, &repl_command).await;
-                
+                println!("Ummm we be here 1");
                 let message = "+OK\r\n".to_string();
                 send_message_to_server(stream, &message, true).await.unwrap();
+                println!("Ummm we be here 2");
                 return
         },
         _ => {
