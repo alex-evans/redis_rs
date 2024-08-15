@@ -83,7 +83,8 @@ pub async fn send_data_to_replica<'a>(
     //         println!("Error connecting to Replica: {:?}", e);
     //     }
     // }
-    // let message = format!("*3\r\n{}", request);
-    send_message_to_server(stream, &request, false).await.unwrap();
+    let message = format!("*3\r\n{}", request);
+    println!("Sending message to replica: {}", message);
+    send_message_to_server(stream, &message, false).await.unwrap();
 
 }
