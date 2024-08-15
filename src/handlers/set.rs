@@ -32,14 +32,10 @@ pub async fn handle_set_request<'a>(
     println!("Done");
 
     if number_of_elements == 2 {
-        println!("Actually we be here 0");
         state_guard.store.insert(key, value);
-        println!("Actually we be here 1");
         send_data_to_replica(state, &repl_command).await;
-        println!("Actually we be here 2");
         let message = "+OK\r\n".to_string();
         send_message_to_server(stream, &message, true).await.unwrap();
-        println!("Actually we be here 3");
         return
     }
     
@@ -55,23 +51,16 @@ pub async fn handle_set_request<'a>(
                 + expiration_duration.as_millis() as u64;
 
                 state_guard.store.insert(key, format!("{}\r\n{}", value, expiration_time));
-                println!("Ummm we be here 0");
                 send_data_to_replica(state, &repl_command).await;
-                println!("Ummm we be here 1");
                 let message = "+OK\r\n".to_string();
                 send_message_to_server(stream, &message, true).await.unwrap();
-                println!("Ummm we be here 2");
                 return
         },
         _ => {
-            println!("We be here 0");
             state_guard.store.insert(key, value);
-            println!("We be here 1");
             send_data_to_replica(state, &repl_command).await;
-            println!("We be here 2");
             let message = "+OK\r\n".to_string();
             send_message_to_server(stream, &message, true).await.unwrap();
-            println!("We be here 3");
             return
         }
     }

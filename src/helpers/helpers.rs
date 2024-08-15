@@ -58,11 +58,15 @@ pub async fn send_data_to_replica<'a>(
 ) -> () {
     println!("Sending data to replica");
     let state: MutexGuard<SharedState> = state.lock().await;
+    println!("We here: 1");
     for (key, value) in state.store.iter() {
         println!("ADE Key: {}, Value: {}", key, value);
     }
+    println!("We here: 2");
     let repl1_host = state.store.get("repl1-listening-host").cloned().unwrap_or_default();
+    println!("We here: 3");
     let repl1_port = state.store.get("repl1-listening-port").cloned().unwrap_or_default();
+    println!("We here: 4");
     let repl1_address: String = format!("{}:{}", repl1_host, repl1_port);
     println!("Connecting to Replica: {}", repl1_address);
     match TcpStream::connect(&repl1_address).await {
