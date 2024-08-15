@@ -1,5 +1,4 @@
 
-use std::os::macos::raw::stat;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::sync::Mutex;
@@ -17,9 +16,9 @@ pub async fn handle_set_request<'a>(
     lines: &'a mut std::str::Lines<'a>, 
     state: &'a Arc<Mutex<SharedState>>, 
     number_of_elements: i32, 
-    request: &str, 
+    _request: &str, 
 ) -> () {
-    // let mut state_guard = state.lock().await;
+    
     let key = get_next_element(lines);
     let value = get_next_element(lines);
     let repl_command = format!(
