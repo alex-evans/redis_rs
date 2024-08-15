@@ -1,4 +1,5 @@
 
+use std::os::macos::raw::stat;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::sync::Mutex;
@@ -18,7 +19,7 @@ pub async fn handle_set_request<'a>(
     number_of_elements: i32, 
     request: &str, 
 ) -> () {
-    let mut state_guard = state.lock().await;
+    // let mut state_guard = state.lock().await;
     let key = get_next_element(lines);
     let value = get_next_element(lines);
     let repl_command = format!(
@@ -28,14 +29,18 @@ pub async fn handle_set_request<'a>(
         value.len(),
         value
     );
-    println!("This is the REQUEST: {}", request);
-    println!("Done");
 
     if number_of_elements == 2 {
-        state_guard.store.insert(key, value);
+        {
+            let mut state_guard = state.lock().await;
+            state_guard.store.insert(key, value);
+        }
+
         send_data_to_replica(state, &repl_command).await;
+        
         let message = "+OK\r\n".to_string();
         send_message_to_server(stream, &message, true).await.unwrap();
+        
         return
     }
     
@@ -49,18 +54,29 @@ pub async fn handle_set_request<'a>(
                 .unwrap()
                 .as_millis() as u64
                 + expiration_duration.as_millis() as u64;
+                {
+                    let mut state_guard = state.lock().await;
+                    state_guard.store.insert(key, format!("{}\r\n{}", value, expiration_time));
+                }
 
-                state_guard.store.insert(key, format!("{}\r\n{}", value, expiration_time));
                 send_data_to_replica(state, &repl_command).await;
+
                 let message = "+OK\r\n".to_string();
                 send_message_to_server(stream, &message, true).await.unwrap();
+
                 return
         },
         _ => {
-            state_guard.store.insert(key, value);
+            {
+                let mut state_guard = state.lock().await;
+                state_guard.store.insert(key, value);
+            }
+            
             send_data_to_replica(state, &repl_command).await;
+            
             let message = "+OK\r\n".to_string();
             send_message_to_server(stream, &message, true).await.unwrap();
+            
             return
         }
     }
