@@ -21,13 +21,13 @@ pub async fn handle_set_request<'a>(
     let mut state_guard = state.lock().await;
     let key = get_next_element(lines);
     let value = get_next_element(lines);
-    let repl_command = format!(
-        "*3\r\n$3\r\nSET\r\n${}\r\n{}\r\n${}\r\n{}\r\n",
-        key.len(),
-        key,
-        value.len(),
-        value
-    );
+    // let repl_command = format!(
+    //     "*3\r\n$3\r\nSET\r\n${}\r\n{}\r\n${}\r\n{}\r\n",
+    //     key.len(),
+    //     key,
+    //     value.len(),
+    //     value
+    // );
     println!("This is the REQUEST: {}", request);
     println!("Done");
 
@@ -35,9 +35,9 @@ pub async fn handle_set_request<'a>(
         state_guard.store.insert(key, value);
         let message = "+OK\r\n".to_string();
         send_message_to_server(stream, &message, true).await.unwrap();
-        if let Err(e) = send_message_to_server(stream, &repl_command, false).await {
-            eprintln!("Error sending request: {}", e);
-        }
+        // if let Err(e) = send_message_to_server(stream, &repl_command, false).await {
+        //     eprintln!("Error sending request: {}", e);
+        // }
         return
     }
     
@@ -57,9 +57,9 @@ pub async fn handle_set_request<'a>(
                 if let Err(e) = send_message_to_server(stream, &message, true).await {
                     eprintln!("Error sending message: {}", e);
                 }
-                if let Err(e) = send_message_to_server(stream, &repl_command, false).await {
-                    eprintln!("Error sending request: {}", e);
-                }
+                // if let Err(e) = send_message_to_server(stream, &repl_command, false).await {
+                //     eprintln!("Error sending request: {}", e);
+                // }
                 return
         },
         _ => {
@@ -68,10 +68,10 @@ pub async fn handle_set_request<'a>(
             if let Err(e) = send_message_to_server(stream, &message, true).await {
                 eprintln!("Error sending message: {}", e);
             }
-            println!("Repl Command: {}", repl_command);
-            if let Err(e) = send_message_to_server(stream, &repl_command, false).await {
-                eprintln!("Error sending request: {}", e);
-            }
+            // println!("Repl Command: {}", repl_command);
+            // if let Err(e) = send_message_to_server(stream, &repl_command, false).await {
+            //     eprintln!("Error sending request: {}", e);
+            // }
             return
         }
     }
