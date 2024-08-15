@@ -57,21 +57,18 @@ pub async fn handle_set_request<'a>(
                 send_data_to_replica(state, &repl_command).await;
                 
                 let message = "+OK\r\n".to_string();
-                if let Err(e) = send_message_to_server(stream, &message, true).await {
-                    eprintln!("Error sending message: {}", e);
-                }
+                send_message_to_server(stream, &message, true).await.unwrap();
                 return
         },
         _ => {
+            println!("We be here 0");
             state_guard.store.insert(key, value);
-            
+            println!("We be here 1");
             send_data_to_replica(state, &repl_command).await;
-
+            println!("We be here 2");
             let message = "+OK\r\n".to_string();
-            if let Err(e) = send_message_to_server(stream, &message, true).await {
-                eprintln!("Error sending message: {}", e);
-            }
-
+            send_message_to_server(stream, &message, true).await.unwrap();
+            println!("We be here 3");
             return
         }
     }
