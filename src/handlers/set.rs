@@ -35,7 +35,7 @@ pub async fn handle_set_request<'a>(
             state_guard.store.insert(key, value);
         }
 
-        send_data_to_replica(state, &repl_command).await;
+        send_data_to_replica(stream, state, &repl_command).await;
         
         let message = "+OK\r\n".to_string();
         send_message_to_server(stream, &message, true).await.unwrap();
@@ -58,7 +58,7 @@ pub async fn handle_set_request<'a>(
                     state_guard.store.insert(key, format!("{}\r\n{}", value, expiration_time));
                 }
 
-                send_data_to_replica(state, &repl_command).await;
+                send_data_to_replica(stream, state, &repl_command).await;
 
                 let message = "+OK\r\n".to_string();
                 send_message_to_server(stream, &message, true).await.unwrap();
@@ -71,7 +71,7 @@ pub async fn handle_set_request<'a>(
                 state_guard.store.insert(key, value);
             }
             
-            send_data_to_replica(state, &repl_command).await;
+            send_data_to_replica(stream, state, &repl_command).await;
             
             let message = "+OK\r\n".to_string();
             send_message_to_server(stream, &message, true).await.unwrap();
