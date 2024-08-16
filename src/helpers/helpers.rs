@@ -2,9 +2,6 @@ use std::sync::Arc;
 use tokio::io::{AsyncWriteExt, AsyncBufReadExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
-use tokio::sync::MutexGuard;
-
-use crate::SharedState;
 
 pub fn determine_number_of_elements(line: &str) -> i32 {
     let characters: String = line.chars().skip(1).collect();
@@ -58,5 +55,4 @@ pub async fn send_data_to_replica<'a>(
 ) -> () {
     println!("Sending data to replica");
     send_message_to_server(stream, &request, false).await.unwrap();
-
 }
