@@ -4,30 +4,34 @@ use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 
 use crate::helpers::helpers::{
-    get_next_element,
+    // get_next_element,
     send_message_to_server
 };
 use crate::SharedState;
 
 pub async fn handle_replconf_request<'a>(
-    stream: &'a mut TcpStream, 
-    lines: &'a mut std::str::Lines<'a>,
+    stream: Arc<Mutex<TcpStream>>, 
+    _lines: &'a mut std::str::Lines<'a>,
     state: &'a Arc<Mutex<SharedState>>
 ) -> () {
-
     println!("Handling REPLCONF request");
-    let sub_command: String = get_next_element(lines);
-    let sub_value: String = get_next_element(lines);
+    
+    // Wrap the stream in an Arc<Mutex<>> for shared access
+    // let stream_arc = Arc::new(Mutex::new(stream));
 
-    if sub_command.to_uppercase() == "LISTENING-PORT" {
-        let current_host = "127.0.0.1".to_string(); 
-        let mut state = state.lock().await;
-        state.store.insert("repl1-listening-host".to_string(), current_host);
-        state.store.insert("repl1-listening-port".to_string(), sub_value);
+    // Store the wrapped stream in the shared state
+    {
+        let mut state_guard = state.lock().await;
+        state_guard.stream = Some(stream.clone());
     }
 
     let message: String = "+OK\r\n".to_string();
-    send_message_to_server(stream, &message, false).await.unwrap();
+    // Lock the stream to send a message
+    {
+        let mut stream_lock = stream.lock().await;
+        send_message_to_server(&mut *stream_lock, &message, false).await.unwrap();
+    }
+
     return
 
 }

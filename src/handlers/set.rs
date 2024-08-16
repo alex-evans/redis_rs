@@ -12,12 +12,15 @@ use crate::helpers::helpers::{
 };
 
 pub async fn handle_set_request<'a>(
-    stream: &'a mut TcpStream, 
+    stream: Arc<Mutex<TcpStream>>, 
     lines: &'a mut std::str::Lines<'a>, 
     state: &'a Arc<Mutex<SharedState>>, 
     number_of_elements: i32, 
     _request: &str, 
 ) -> () {
+    println!("Handling SET request");
+
+    let mut stream = stream.lock().await;
     
     let key = get_next_element(lines);
     let value = get_next_element(lines);
@@ -35,10 +38,10 @@ pub async fn handle_set_request<'a>(
             state_guard.store.insert(key, value);
         }
 
-        send_data_to_replica(stream, state, &repl_command).await;
+        send_data_to_replica(&mut stream, state, &repl_command).await;
         
         let message = "+OK\r\n".to_string();
-        send_message_to_server(stream, &message, true).await.unwrap();
+        send_message_to_server(&mut stream, &message, true).await.unwrap();
         
         return
     }
@@ -58,10 +61,10 @@ pub async fn handle_set_request<'a>(
                     state_guard.store.insert(key, format!("{}\r\n{}", value, expiration_time));
                 }
 
-                send_data_to_replica(stream, state, &repl_command).await;
+                send_data_to_replica(&mut stream, state, &repl_command).await;
 
                 let message = "+OK\r\n".to_string();
-                send_message_to_server(stream, &message, true).await.unwrap();
+                send_message_to_server(&mut stream, &message, true).await.unwrap();
 
                 return
         },
@@ -71,10 +74,10 @@ pub async fn handle_set_request<'a>(
                 state_guard.store.insert(key, value);
             }
             
-            send_data_to_replica(stream, state, &repl_command).await;
+            send_data_to_replica(&mut stream, state, &repl_command).await;
             
             let message = "+OK\r\n".to_string();
-            send_message_to_server(stream, &message, true).await.unwrap();
+            send_message_to_server(&mut stream, &message, true).await.unwrap();
             
             return
         }

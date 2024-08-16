@@ -4,6 +4,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpListener;
+use tokio::net::TcpStream;
 
 #[derive(Clone)]
 pub struct Config {
@@ -67,6 +68,7 @@ use command_types::replication::{
 
 pub struct SharedState {
     pub store: HashMap<String, String>,
+    pub stream: Option<Arc<Mutex<TcpStream>>>
 }
 
 pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
@@ -74,6 +76,7 @@ pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let listener = TcpListener::bind(format!("127.0.0.1:{}", config.port)).await?;
     let state = Arc::new(tokio::sync::Mutex::new(SharedState {
         store: HashMap::new(),
+        stream: None
     }));
 
     let config_clone = config.clone();
@@ -95,14 +98,17 @@ pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn process_request(
-    mut stream: tokio::net::TcpStream, 
+    stream: tokio::net::TcpStream, 
     state: Arc<Mutex<SharedState>>
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("Handling process request");
+    
+    let stream = Arc::new(Mutex::new(stream));
     let mut buf = [0; 1024];
 
     loop {
-        match stream.read(&mut buf).await {
+        let mut stream_lock = stream.lock().await;
+        match stream_lock.read(&mut buf).await {
             Ok(0) => {
                 println!("Connection closed");
                 return Ok(());
@@ -134,7 +140,8 @@ async fn process_request(
                 } else if request.starts_with('*') {
                     // Means it's a List
                     println!("Received List: {}", request);
-                    list_request(&request, &state, &mut stream).await;
+                    drop(stream_lock); // Release the lock before passing to list_request
+                    list_request(&request, &state, stream.clone()).await;
                     println!("Finished processing list request");
                     // let response_string = list_request(config_ref, &request, &state);
                     // let response_bytes = response_string.as_bytes().try_into().unwrap();
