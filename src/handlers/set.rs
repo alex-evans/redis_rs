@@ -30,29 +30,25 @@ pub async fn handle_set_request<'a>(
         value.len(),
         value
     );
-    println!("ADE - We here 1");
 
     if number_of_elements == 2 {
-        println!("ADE - We be here 1");
-        {
+        let stored_stream_option = {
             let mut state_guard = state.lock().await;
-            state_guard.store.insert(key, value);
-        }
+            state_guard.store.insert(key.clone(), value.clone());
+            state_guard.stream.clone() // Clone the Arc to release the lock
+        };
 
-        println!("ADE - We be here 2");
         // Use the stored stream from the state
-        if let Some(stored_stream) = &state.lock().await.stream {
+        if let Some(stored_stream) =stored_stream_option {
             let mut stored_stream_lock = stored_stream.lock().await;
-            send_data_to_replica(&mut stored_stream_lock, state, &repl_command).await;
+            send_data_to_replica(&mut stored_stream_lock, &repl_command).await;
         } else {
             println!("WARNING - No stored stream found in state");
         }
-        println!("ADE - We be here 3");
 
         let mut stream_lock = stream.lock().await;
         let message = "+OK\r\n".to_string();
         send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
-        println!("ADE - We be here 4");
 
         return;
     }
@@ -67,15 +63,17 @@ pub async fn handle_set_request<'a>(
                 .unwrap()
                 .as_millis() as u64
                 + expiration_duration.as_millis() as u64;
-                {
-                    let mut state_guard = state.lock().await;
-                    state_guard.store.insert(key, format!("{}\r\n{}", value, expiration_time));
-                }
 
+                let stored_stream_option = {
+                    let mut state_guard = state.lock().await;
+                    state_guard.store.insert(key.clone(), format!("{}\r\n{}", value, expiration_time));
+                    state_guard.stream.clone() // Clone the Arc to release the lock
+                };
+                
                 // Use the stored stream from the state
-                if let Some(stored_stream) = &state.lock().await.stream {
+                if let Some(stored_stream) = stored_stream_option {
                     let mut stored_stream_lock = stored_stream.lock().await;
-                    send_data_to_replica(&mut stored_stream_lock, state, &repl_command).await;
+                    send_data_to_replica(&mut stored_stream_lock, &repl_command).await;
                 } else {
                     println!("WARNING - No stored stream found in state");
                 }
@@ -87,30 +85,24 @@ pub async fn handle_set_request<'a>(
                 return;
         },
         _ => {
-            println!("ADE - Dude We be here 1");
-            {
+            let stored_stream_option = {
                 let mut state_guard = state.lock().await;
-                state_guard.store.insert(key, value);
-            }
-            println!("ADE - Dude We be here 2");
-            
+                state_guard.store.insert(key.clone(), value.clone());
+                state_guard.stream.clone() // Clone the Arc to release the lock
+            };
+
             // Use the stored stream from the state
-            if let Some(stored_stream) = &state.lock().await.stream {
-                println!("ADE - Dude We be here 2a");
+            if let Some(stored_stream) = stored_stream_option {
                 let mut stored_stream_lock = stored_stream.lock().await;
-                println!("ADE - Dude We be here 2b");
-                send_data_to_replica(&mut stored_stream_lock, state, &repl_command).await;
-                println!("ADE - Dude We be here 2c");
+                send_data_to_replica(&mut stored_stream_lock, &repl_command).await;
             } else {
                 println!("WARNING - No stored stream found in state");
             }
 
-            println!("ADE - Dude We be here 3");
             let mut stream_lock = stream.lock().await;
             let message = "+OK\r\n".to_string();
             send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
             
-            println!("ADE - Dude We be here 4");
             return;
         }
     }

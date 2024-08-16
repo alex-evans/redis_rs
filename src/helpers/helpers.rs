@@ -54,37 +54,9 @@ pub async fn send_message_to_server_arc(
 
 pub async fn send_data_to_replica<'a>(
     stream: &mut TcpStream,
-    state: &'a Arc<Mutex<SharedState>>,
     request: &str
 ) -> () {
     println!("Sending data to replica");
-    let state: MutexGuard<SharedState> = state.lock().await;
-
-    for (key, value) in state.store.iter() {
-        println!("ADE Key: {}, Value: {}", key, value);
-    }
-
-    let repl1_host = state.store.get("repl1-listening-host").cloned().unwrap_or_default();
-    let repl1_port = state.store.get("repl1-listening-port").cloned().unwrap_or_default();
-    let repl1_address: String = format!("{}:{}", repl1_host, repl1_port);
-
-    println!("Connecting to Replica: {}", repl1_address);
-
-    // match TcpStream::connect(&repl1_address).await {
-    //     Ok(stream) => {
-    //         let stream = Arc::new(Mutex::new(stream));
-            
-    //         // Send Request to Replica
-    //         let message = format!("*3\r\n{}", request);
-    //         send_message_to_server_arc(stream.clone(), &message, false).await.unwrap();
-
-    //     },
-    //     Err(e) => {
-    //         println!("Error connecting to Replica: {:?}", e);
-    //     }
-    // }
-    // let message = format!("*3\r\n{}", request);
-    println!("Sending message to replica: {}", request);
     send_message_to_server(stream, &request, false).await.unwrap();
 
 }
