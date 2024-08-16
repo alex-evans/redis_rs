@@ -52,7 +52,8 @@ pub async fn handle_set_request<'a>(
 
         return;
     }
-    
+    println!("Dude we here 1");
+
     let sub_command: String = get_next_element(lines);
     let sub_value: String = get_next_element(lines);
     match sub_command.to_uppercase().as_str() {
@@ -85,11 +86,13 @@ pub async fn handle_set_request<'a>(
                 return;
         },
         _ => {
+            println!("Dude we here 2");
             let stored_stream_option = {
                 let mut state_guard = state.lock().await;
                 state_guard.store.insert(key.clone(), value.clone());
                 state_guard.stream.clone() // Clone the Arc to release the lock
             };
+            println!("Dude we here 3");
 
             // Use the stored stream from the state
             if let Some(stored_stream) = stored_stream_option {
@@ -98,11 +101,13 @@ pub async fn handle_set_request<'a>(
             } else {
                 println!("WARNING - No stored stream found in state");
             }
+            println!("Dude we here 4");
 
             let mut stream_lock = stream.lock().await;
             let message = "+OK\r\n".to_string();
             send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
             
+            println!("Dude we here 5");
             return;
         }
     }
