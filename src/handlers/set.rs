@@ -1,4 +1,5 @@
 
+use std::str;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::sync::Mutex;
@@ -20,8 +21,6 @@ pub async fn handle_set_request<'a>(
 ) -> () {
     println!("Handling SET request");
 
-    let mut stream = stream.lock().await;
-    
     let key = get_next_element(lines);
     let value = get_next_element(lines);
     let repl_command = format!(
@@ -38,10 +37,17 @@ pub async fn handle_set_request<'a>(
             state_guard.store.insert(key, value);
         }
 
-        send_data_to_replica(&mut stream, state, &repl_command).await;
+        // Use the stored stream from the state
+        if let Some(stored_stream) = &state.lock().await.stream {
+            let mut stored_stream_lock = stored_stream.lock().await;
+            send_data_to_replica(&mut stored_stream_lock, state, &repl_command).await;
+        } else {
+            println!("WARNING - No stored stream found in state");
+        }
         
+        let mut stream_lock = stream.lock().await;
         let message = "+OK\r\n".to_string();
-        send_message_to_server(&mut stream, &message, true).await.unwrap();
+        send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
         
         return
     }
@@ -61,12 +67,19 @@ pub async fn handle_set_request<'a>(
                     state_guard.store.insert(key, format!("{}\r\n{}", value, expiration_time));
                 }
 
-                send_data_to_replica(&mut stream, state, &repl_command).await;
+                // Use the stored stream from the state
+                if let Some(stored_stream) = &state.lock().await.stream {
+                    let mut stored_stream_lock = stored_stream.lock().await;
+                    send_data_to_replica(&mut stored_stream_lock, state, &repl_command).await;
+                } else {
+                    println!("WARNING - No stored stream found in state");
+                }
 
+                let mut stream_lock = stream.lock().await;
                 let message = "+OK\r\n".to_string();
-                send_message_to_server(&mut stream, &message, true).await.unwrap();
+                send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
 
-                return
+                return;
         },
         _ => {
             {
@@ -74,10 +87,17 @@ pub async fn handle_set_request<'a>(
                 state_guard.store.insert(key, value);
             }
             
-            send_data_to_replica(&mut stream, state, &repl_command).await;
+            // Use the stored stream from the state
+            if let Some(stored_stream) = &state.lock().await.stream {
+                let mut stored_stream_lock = stored_stream.lock().await;
+                send_data_to_replica(&mut stored_stream_lock, state, &repl_command).await;
+            } else {
+                println!("WARNING - No stored stream found in state");
+            }
             
+            let mut stream_lock = stream.lock().await;
             let message = "+OK\r\n".to_string();
-            send_message_to_server(&mut stream, &message, true).await.unwrap();
+            send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
             
             return
         }
