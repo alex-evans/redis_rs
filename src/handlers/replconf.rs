@@ -27,7 +27,7 @@ pub async fn handle_replconf_request<'a>(
         println!("REPLCONF - Attempting to lock the stream...");
         let mut stream_lock = stream.lock().await;
         println!("REPLCONF - Successfully locked the stream");
-        send_message_to_server(&mut *stream_lock, &message, false).await.unwrap();
+        send_message_to_server(&mut *stream_lock, &message, true).await.unwrap();
     }
 
     return
