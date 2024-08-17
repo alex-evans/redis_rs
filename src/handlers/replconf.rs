@@ -3,10 +3,7 @@ use std::sync::Arc;
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 
-use crate::helpers::helpers::{
-    // get_next_element,
-    send_message_to_server
-};
+use crate::helpers::helpers::send_message_to_server;
 use crate::SharedState;
 
 pub async fn handle_replconf_request<'a>(
@@ -16,9 +13,6 @@ pub async fn handle_replconf_request<'a>(
 ) -> () {
     println!("Handling REPLCONF request");
     
-    // Wrap the stream in an Arc<Mutex<>> for shared access
-    // let stream_arc = Arc::new(Mutex::new(stream));
-
     // Store the wrapped stream in the shared state
     {
         let mut state_guard = state.lock().await;

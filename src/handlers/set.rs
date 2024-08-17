@@ -39,8 +39,10 @@ pub async fn handle_set_request<'a>(
         };
 
         // Use the stored stream from the state
-        if let Some(stored_stream) =stored_stream_option {
+        if let Some(stored_stream) = stored_stream_option {
+            println!("Attempting to lock the stored stream...");
             let mut stored_stream_lock = stored_stream.lock().await;
+            println!("Successfully locked the stored stream");
             send_data_to_replica(&mut stored_stream_lock, &repl_command).await;
         } else {
             println!("WARNING - No stored stream found in state");
@@ -52,7 +54,6 @@ pub async fn handle_set_request<'a>(
 
         return;
     }
-    println!("Dude we here 1");
 
     let sub_command: String = get_next_element(lines);
     let sub_value: String = get_next_element(lines);
@@ -73,7 +74,9 @@ pub async fn handle_set_request<'a>(
                 
                 // Use the stored stream from the state
                 if let Some(stored_stream) = stored_stream_option {
+                    println!("Attempting to lock the stored stream...");
                     let mut stored_stream_lock = stored_stream.lock().await;
+                    println!("Successfully locked the stored stream");
                     send_data_to_replica(&mut stored_stream_lock, &repl_command).await;
                 } else {
                     println!("WARNING - No stored stream found in state");
@@ -86,31 +89,26 @@ pub async fn handle_set_request<'a>(
                 return;
         },
         _ => {
-            println!("Dude we here 2");
             let stored_stream_option = {
                 let mut state_guard = state.lock().await;
                 state_guard.store.insert(key.clone(), value.clone());
                 state_guard.stream.clone() // Clone the Arc to release the lock
             };
-            println!("Dude we here 3");
 
             // Use the stored stream from the state
             if let Some(stored_stream) = stored_stream_option {
-                println!("Dude we here 3.1");
+                println!("Attempting to lock the stored stream...");
                 let mut stored_stream_lock = stored_stream.lock().await;
-                println!("Dude we here 3.2");
+                println!("Successfully locked the stored stream");
                 send_data_to_replica(&mut stored_stream_lock, &repl_command).await;
-                println!("Dude we here 3.3");
             } else {
                 println!("WARNING - No stored stream found in state");
             }
-            println!("Dude we here 4");
 
             let mut stream_lock = stream.lock().await;
             let message = "+OK\r\n".to_string();
             send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
             
-            println!("Dude we here 5");
             return;
         }
     }
