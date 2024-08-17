@@ -89,6 +89,10 @@ pub async fn handle_set_request<'a>(
                 return;
         },
         _ => {
+            let mut stream_lock = stream.lock().await;
+            let message = "+OK\r\n".to_string();
+            send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
+
             let stored_stream_option = {
                 let mut state_guard = state.lock().await;
                 state_guard.store.insert(key.clone(), value.clone());
@@ -104,10 +108,6 @@ pub async fn handle_set_request<'a>(
             } else {
                 println!("WARNING - No stored stream found in state");
             }
-
-            let mut stream_lock = stream.lock().await;
-            let message = "+OK\r\n".to_string();
-            send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
             
             return;
         }
