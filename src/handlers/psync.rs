@@ -1,7 +1,7 @@
 
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use hex;
 use std::fs;
@@ -26,10 +26,26 @@ pub async fn handle_psync_request<'a>(
     let message = format!("${}\r\n", empty_rdb_length);
     send_message_to_server(&mut stream, &message, false).await.unwrap();
     
-    {
-        stream.write_all(&empty_rdb).await.unwrap();
-    }
+    stream.write_all(&empty_rdb).await.unwrap();
+    stream.flush().await.unwrap();
 
+    println!("Finished sending PSYNC file");
+
+    // Wait for a response
+    let mut buf = [0; 1024];
+    match stream.read(&mut buf).await {
+        Ok(0) => {
+            println!("Connection closed by peer");
+        }
+        Ok(n) => {
+            let response = std::str::from_utf8(&buf[..n]).unwrap();
+            println!("Received response: {}", response);
+        }
+        Err(e) => {
+            println!("Error reading response: {:?}", e);
+        }
+    }
+    
     println!("Finished sending PSYNC file");
     return
 }
