@@ -29,10 +29,8 @@ pub async fn handle_psync_request<'a>(
     let rdb_length = rdb_file.len();
     println!("Length of RDB file: {}", rdb_length);
     let message = format!("${}\r\n", rdb_length);
-    send_message_to_server(&mut stream, &message, true).await.unwrap();
-    
-    let rdb_length = rdb_file.len();
-    println!("Length of RDB file2: {}", rdb_length);
+    send_message_to_server(&mut stream, &message, false).await.unwrap();
+   
     stream.write_all(&rdb_file).await.unwrap();
     stream.flush().await.unwrap();
 
