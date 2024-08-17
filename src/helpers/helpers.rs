@@ -32,9 +32,13 @@ pub async fn send_message_to_server(
     println!("ade - 2");
     println!("Waiting for response: {}", wait_for_response);
     if wait_for_response {
+        println!("ade - 2.1");
         let mut reader = BufReader::new(&mut *stream);
+        println!("ade - 2.2");
         let mut response: String = String::new();
+        println!("ade - 2.3");
         reader.read_line(&mut response).await?;
+        println!("ade - 2.4");
         println!("Received response from server: {}", response);
         return Ok(response);
     }
