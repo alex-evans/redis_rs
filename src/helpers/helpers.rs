@@ -28,9 +28,9 @@ pub async fn send_message_to_server(
 ) -> Result<String, Box<dyn std::error::Error>> {
     println!("Sending message to server: {}", message);
     stream.write_all(message.as_bytes()).await?;
-    println!("ade - 1");
     stream.flush().await?;
     println!("ade - 2");
+    println!("Waiting for response: {}", wait_for_response);
     if wait_for_response {
         let mut reader = BufReader::new(&mut *stream);
         let mut response: String = String::new();
