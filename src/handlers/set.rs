@@ -32,6 +32,12 @@ pub async fn handle_set_request<'a>(
     );
 
     if number_of_elements == 2 {
+        {
+            let mut stream_lock = stream.lock().await;
+            let message = "+OK\r\n".to_string();
+            send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
+        }
+
         let stored_stream_option = {
             let mut state_guard = state.lock().await;
             state_guard.store.insert(key.clone(), value.clone());
@@ -48,10 +54,6 @@ pub async fn handle_set_request<'a>(
             println!("WARNING - No stored stream found in state");
         }
 
-        let mut stream_lock = stream.lock().await;
-        let message = "+OK\r\n".to_string();
-        send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
-
         return;
     }
 
@@ -65,28 +67,30 @@ pub async fn handle_set_request<'a>(
                 .unwrap()
                 .as_millis() as u64
                 + expiration_duration.as_millis() as u64;
-
-                let stored_stream_option = {
-                    let mut state_guard = state.lock().await;
-                    state_guard.store.insert(key.clone(), format!("{}\r\n{}", value, expiration_time));
-                    state_guard.stream.clone() // Clone the Arc to release the lock
-                };
-                
-                // Use the stored stream from the state
-                if let Some(stored_stream) = stored_stream_option {
-                    println!("Attempting to lock the stored stream...");
-                    let mut stored_stream_lock = stored_stream.lock().await;
-                    println!("Successfully locked the stored stream");
-                    send_data_to_replica(&mut stored_stream_lock, &repl_command).await;
-                } else {
-                    println!("WARNING - No stored stream found in state");
-                }
-
+            
+            {
                 let mut stream_lock = stream.lock().await;
                 let message = "+OK\r\n".to_string();
                 send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
+            }
 
-                return;
+            let stored_stream_option = {
+                let mut state_guard = state.lock().await;
+                state_guard.store.insert(key.clone(), format!("{}\r\n{}", value, expiration_time));
+                state_guard.stream.clone() // Clone the Arc to release the lock
+            };
+            
+            // Use the stored stream from the state
+            if let Some(stored_stream) = stored_stream_option {
+                println!("Attempting to lock the stored stream...");
+                let mut stored_stream_lock = stored_stream.lock().await;
+                println!("Successfully locked the stored stream");
+                send_data_to_replica(&mut stored_stream_lock, &repl_command).await;
+            } else {
+                println!("WARNING - No stored stream found in state");
+            }
+
+            return;
         },
         _ => {
             {
