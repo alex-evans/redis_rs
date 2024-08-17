@@ -25,13 +25,15 @@ pub async fn handle_psync_request<'a>(
     }
 
     let file_contents = fs::read(file_path).unwrap();
-    let empty_rdb = hex::decode(&file_contents).unwrap();
-    let empty_rdb_length = empty_rdb.len();
-    println!("Length of RDB file: {}", empty_rdb_length);
-    let message = format!("${}\r\n", empty_rdb_length);
+    let rdb_file = hex::decode(&file_contents).unwrap();
+    let rdb_length = rdb_file.len();
+    println!("Length of RDB file: {}", rdb_length);
+    let message = format!("${}\r\n", rdb_length);
     send_message_to_server(&mut stream, &message, true).await.unwrap();
     
-    stream.write_all(&empty_rdb).await.unwrap();
+    let rdb_length = rdb_file.len();
+    println!("Length of RDB file2: {}", rdb_length);
+    stream.write_all(&rdb_file).await.unwrap();
     stream.flush().await.unwrap();
 
     println!("Finished sending PSYNC file");
