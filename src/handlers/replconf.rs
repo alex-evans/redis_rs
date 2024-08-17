@@ -30,6 +30,15 @@ pub async fn handle_replconf_request<'a>(
         send_message_to_server(&mut *stream_lock, &message, true).await.unwrap();
     }
 
+    let stored_stream_option = {
+        let state_guard = state.lock().await;
+        state_guard.stream.clone()
+    };
+
+    if let Some(stored_stream) = stored_stream_option {
+        println!("ADE TEST Stored stream: {:?}", stored_stream);
+    };
+
     return
 
 }
