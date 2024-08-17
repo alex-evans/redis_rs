@@ -30,6 +30,7 @@ pub async fn handle_replconf_request<'a>(
         send_message_to_server(&mut *stream_lock, &message, true).await.unwrap();
     }
 
+    println!("REPLCONF - Successfully sent response to client");
     return
 
 }

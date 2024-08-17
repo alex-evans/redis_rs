@@ -107,6 +107,7 @@ async fn process_request(
     let mut buf = [0; 1024];
 
     loop {
+        println!("Waiting for data...");
         let mut stream_lock = stream.lock().await;
         match stream_lock.read(&mut buf).await {
             Ok(0) => {
