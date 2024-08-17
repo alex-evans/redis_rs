@@ -29,12 +29,15 @@ pub async fn send_message_to_server(
     println!("Sending message to server: {}", message);
     stream.write_all(message.as_bytes()).await?;
     stream.flush().await?;
-    
+
     {
         println!("Waiting for response: {}", wait_for_response);
         if wait_for_response {
+            println!("ADE - Waiting for response from server...");
             let mut reader = BufReader::new(&mut *stream);
+            println!("ADE - Reader: {:?}", reader);
             let mut response: String = String::new();
+            println!("ADE - Reading line from server...");
             reader.read_line(&mut response).await?;
             println!("Received response from server: {}", response);
         }
