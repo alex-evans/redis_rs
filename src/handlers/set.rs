@@ -96,8 +96,11 @@ pub async fn handle_set_request<'a>(
 
             // Use the stored stream from the state
             if let Some(stored_stream) = stored_stream_option {
+                println!("Dude we here 3.1");
                 let mut stored_stream_lock = stored_stream.lock().await;
+                println!("Dude we here 3.2");
                 send_data_to_replica(&mut stored_stream_lock, &repl_command).await;
+                println!("Dude we here 3.3");
             } else {
                 println!("WARNING - No stored stream found in state");
             }
