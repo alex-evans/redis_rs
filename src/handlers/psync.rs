@@ -23,6 +23,7 @@ pub async fn handle_psync_request<'a>(
     let file_contents = fs::read(file_path).unwrap();
     let empty_rdb = hex::decode(&file_contents).unwrap();
     let empty_rdb_length = empty_rdb.len();
+    println!("Length of RDB file: {}", empty_rdb_length);
     let message = format!("${}\r\n", empty_rdb_length);
     send_message_to_server(&mut stream, &message, true).await.unwrap();
     
