@@ -36,7 +36,7 @@ pub async fn handle_info_request<'a>(
         master_repl_offset
     );
 
-    send_message_to_server(&mut stream, &message, false).await.unwrap();
+    send_message_to_server(&mut stream, &message, true).await.unwrap();
     return
     
 }

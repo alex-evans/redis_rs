@@ -19,7 +19,7 @@ pub async fn handle_echo_request<'a>(
     let len_of_echo_line = echo_line.len();
     let echo_response = format!("${}\r\n{}\r\n", len_of_echo_line, echo_line);
     
-    send_message_to_server(&mut stream, &echo_response, false).await.unwrap();
+    send_message_to_server(&mut stream, &echo_response, true).await.unwrap();
     
     return
 }
