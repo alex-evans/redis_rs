@@ -16,7 +16,7 @@ pub async fn handle_psync_request<'a>(
     let mut stream = stream.lock().await;
 
     let message: String = "+FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0\r\n".to_string();
-    send_message_to_server(&mut stream, &message, true).await.unwrap();
+    send_message_to_server(&mut stream, &message, false).await.unwrap();
     println!("Finished handling PSYNC initial request");
 
     let file_path = "data/fake.rdb";
