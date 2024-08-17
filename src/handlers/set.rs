@@ -32,9 +32,14 @@ pub async fn handle_set_request<'a>(
     );
 
     println!("Storing key-value pair in state");
+    {
+        let mut state_guard = state.lock().await;
+        state_guard.stream = Some(stream.clone());
+    }
+
     let stored_stream_option = {
         let state_guard = state.lock().await;
-        state_guard.stream.clone() // Clone the Arc to release the lock
+        state_guard.stream.clone()
     };
 
     if let Some(stored_stream) = stored_stream_option {
@@ -123,7 +128,6 @@ pub async fn handle_set_request<'a>(
             // Use the stored stream from the state
             if let Some(stored_stream) = stored_stream_option {
                 println!("Attempting to lock the stored stream...");
-                // println!("skipping lock for now");
                 println!("Stored stream: {:?}", stored_stream);
                 let mut stored_stream_lock = stored_stream.lock().await;
                 println!("Successfully locked the stored stream");
