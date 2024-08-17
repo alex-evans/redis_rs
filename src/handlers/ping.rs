@@ -11,7 +11,7 @@ pub async fn handle_ping_request<'a>(stream: Arc<Mutex<TcpStream>>) -> () {
 
     let ping_response: String = "+PONG\r\n".to_string();
     
-    send_message_to_server(&mut stream, &ping_response, true).await.unwrap();
+    send_message_to_server(&mut stream, &ping_response, false).await.unwrap();
     
     println!("Sent PONG response to client");
 
