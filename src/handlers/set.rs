@@ -31,6 +31,19 @@ pub async fn handle_set_request<'a>(
         value
     );
 
+    println!("Storing key-value pair in state");
+    let stored_stream_option = {
+        let state_guard = state.lock().await;
+        state_guard.stream.clone() // Clone the Arc to release the lock
+    };
+
+    if let Some(stored_stream) = stored_stream_option {
+        println!("Attempting to lock the stored stream...");
+        println!("ADE MORE TEST - Stored stream: {:?}", stored_stream);
+    } else {
+        println!("WARNING - No stored stream found in state");
+    }
+
     if number_of_elements == 2 {
         {
             let mut stream_lock = stream.lock().await;
