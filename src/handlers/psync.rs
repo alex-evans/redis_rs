@@ -1,4 +1,3 @@
-
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -20,6 +19,11 @@ pub async fn handle_psync_request<'a>(
     println!("Finished handling PSYNC initial request");
 
     let file_path = "data/fake.rdb";
+    if !std::path::Path::new(file_path).exists() {
+        println!("RDB file not found at path: {}", file_path);
+        return;
+    }
+
     let file_contents = fs::read(file_path).unwrap();
     let empty_rdb = hex::decode(&file_contents).unwrap();
     let empty_rdb_length = empty_rdb.len();
@@ -48,6 +52,4 @@ pub async fn handle_psync_request<'a>(
     }
     
     println!("Finished sending PSYNC file");
-    return
 }
-    
