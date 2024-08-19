@@ -17,19 +17,17 @@ pub async fn handle_replconf_request<'a>(
     // let sub_value: String = get_next_element(lines);
 
     if sub_command.to_uppercase() == "LISTENING-PORT" {
-        let replca_host = "127.0.0.1".to_string();
-        let replca_port = "6380".to_string();
+        let mut receiver = {
+            let state_guard = state.lock().await;
+            state_guard.sender.subscribe()
+        };
 
-        // Build a new stream to the replica
-        let replica_stream = TcpStream::connect(format!("{}:{}", replca_host, replca_port)).await.unwrap();
-        let replica_stream_arc = Arc::new(Mutex::new(replica_stream));
-        
-        // Store the wrapped stream in the shared state
-        {
-            let mut state_guard = state.lock().await;
-            println!("REPLCONF - Storing stream in shared state");
-            state_guard.stream = Some(replica_stream_arc.clone());
-        }
+        tokio::spawn(async move {
+            loop {
+                let message = receiver.recv().await.unwrap();
+                println!("Received message: {}", message);
+            }
+        });
     }
 
     // Lock the stream to send a message

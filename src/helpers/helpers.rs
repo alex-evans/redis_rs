@@ -52,10 +52,10 @@ pub async fn send_message_to_server_arc(
     send_message_to_server(&mut *stream, message, wait_for_response).await
 }
 
-pub async fn send_data_to_replica<'a>(
-    stream: &mut TcpStream,
-    request: &str
-) -> () {
-    println!("Sending data to replica");
-    send_message_to_server(stream, &request, false).await.unwrap();
-}
+// pub async fn send_data_to_replica<'a>(
+//     stream: &mut TcpStream,
+//     request: &str
+// ) -> () {
+//     println!("Sending data to replica");
+//     send_message_to_server(stream, &request, false).await.unwrap();
+// }

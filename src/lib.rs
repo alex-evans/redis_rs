@@ -1,15 +1,15 @@
 
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::{broadcast, Mutex};
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpListener;
-use tokio::net::TcpStream;
+// use tokio::net::TcpStream;
 
 #[derive(Clone)]
 pub struct Config {
     pub port: String,
-    pub replicaof: String
+    pub replicaof: String,
 }
 
 impl Config {
@@ -68,7 +68,7 @@ use command_types::replication::{
 
 pub struct SharedState {
     pub store: HashMap<String, String>,
-    pub stream: Option<Arc<Mutex<TcpStream>>>
+    pub sender: broadcast::Sender<String>,
 }
 
 pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
@@ -76,7 +76,7 @@ pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let listener = TcpListener::bind(format!("127.0.0.1:{}", config.port)).await?;
     let state = Arc::new(tokio::sync::Mutex::new(SharedState {
         store: HashMap::new(),
-        stream: None
+        sender: broadcast::channel(10).0,
     }));
 
     let config_clone = config.clone();

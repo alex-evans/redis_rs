@@ -9,7 +9,6 @@ use crate::SharedState;
 use crate::helpers::helpers::{
     get_next_element,
     send_message_to_server,
-    send_data_to_replica
 };
 
 pub async fn handle_set_request<'a>(
@@ -31,45 +30,20 @@ pub async fn handle_set_request<'a>(
         value
     );
 
-    println!("Storing key-value pair in state");
-    {
-        let mut state_guard = state.lock().await;
-        state_guard.stream = Some(stream.clone());
-    }
-
-    let stored_stream_option = {
-        let state_guard = state.lock().await;
-        state_guard.stream.clone()
-    };
-
-    if let Some(stored_stream) = stored_stream_option {
-        println!("Attempting to lock the stored stream...");
-        println!("ADE MORE TEST - Stored stream: {:?}", stored_stream);
-    } else {
-        println!("WARNING - No stored stream found in state");
-    }
-
     if number_of_elements == 2 {
+        {
+            let mut state_guard = state.lock().await;
+            state_guard.store.insert(key.clone(), value.clone());
+
+            if let Err(err) = state_guard.sender.send(repl_command) {
+                eprintln!("Failed to send message to sender: {}", err);
+            }
+        }
+
         {
             let mut stream_lock = stream.lock().await;
             let message = "+OK\r\n".to_string();
             send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
-        }
-
-        let stored_stream_option = {
-            let mut state_guard = state.lock().await;
-            state_guard.store.insert(key.clone(), value.clone());
-            state_guard.stream.clone() // Clone the Arc to release the lock
-        };
-
-        // Use the stored stream from the state
-        if let Some(stored_stream) = stored_stream_option {
-            println!("Attempting to lock the stored stream...");
-            let mut stored_stream_lock = stored_stream.lock().await;
-            println!("Successfully locked the stored stream");
-            send_data_to_replica(&mut stored_stream_lock, &repl_command).await;
-        } else {
-            println!("WARNING - No stored stream found in state");
         }
 
         return;
@@ -85,38 +59,34 @@ pub async fn handle_set_request<'a>(
                 .unwrap()
                 .as_millis() as u64
                 + expiration_duration.as_millis() as u64;
-            
+
+            {
+                let mut state_guard = state.lock().await;
+                state_guard.store.insert(key.clone(), format!("{}\r\n{}", value, expiration_time));
+
+                if let Err(err) = state_guard.sender.send(repl_command) {
+                    eprintln!("Failed to send message to sender: {}", err);
+                }
+            }
+
             {
                 let mut stream_lock = stream.lock().await;
                 let message = "+OK\r\n".to_string();
                 send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
             }
 
-            let stored_stream_option = {
-                let mut state_guard = state.lock().await;
-                state_guard.store.insert(key.clone(), format!("{}\r\n{}", value, expiration_time));
-                state_guard.stream.clone() // Clone the Arc to release the lock
-            };
-            
-            // Use the stored stream from the state
-            if let Some(stored_stream) = stored_stream_option {
-                println!("Attempting to lock the stored stream...");
-                let mut stored_stream_lock = stored_stream.lock().await;
-                println!("Successfully locked the stored stream");
-                send_data_to_replica(&mut stored_stream_lock, &repl_command).await;
-            } else {
-                println!("WARNING - No stored stream found in state");
-            }
-
             return;
         },
         _ => {
             println!("Storing key-value pair in state");
-            let stored_stream_option = {
+            {
                 let mut state_guard = state.lock().await;
                 state_guard.store.insert(key.clone(), value.clone());
-                state_guard.stream.clone() // Clone the Arc to release the lock
-            };
+
+                if let Err(err) = state_guard.sender.send(repl_command) {
+                    eprintln!("Failed to send message to sender: {}", err);
+                }
+            }
             
             {
                 println!("ADE - Stream for OK {:?}", stream);
@@ -124,18 +94,6 @@ pub async fn handle_set_request<'a>(
                 let message = "+OK\r\n".to_string();
                 send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
             } // Release the lock on the stream
-            
-            println!("Attempting to send data to replica");
-            // Use the stored stream from the state
-            if let Some(stored_stream) = stored_stream_option {
-                println!("Attempting to lock the stored stream...");
-                println!("Stored stream: {:?}", stored_stream);
-                let mut stored_stream_lock = stored_stream.lock().await;
-                println!("Successfully locked the stored stream");
-                send_data_to_replica(&mut stored_stream_lock, &repl_command).await;
-            } else {
-                println!("WARNING - No stored stream found in state");
-            }
             
             return;
         }
