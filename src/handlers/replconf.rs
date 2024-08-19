@@ -22,10 +22,15 @@ pub async fn handle_replconf_request<'a>(
             state_guard.sender.subscribe()
         };
 
+        // Clone the Arc to move into the task
+        let stream_clone = Arc::clone(&stream);
+
         tokio::spawn(async move {
             loop {
-                let message = receiver.recv().await.unwrap();
-                println!("Received message: {}", message);
+                if let Ok(message) = receiver.recv().await {
+                    let mut stream_lock = stream_clone.lock().await;
+                    send_message_to_server(& mut stream_lock, &message, false).await.unwrap();
+                }
             }
         });
     }

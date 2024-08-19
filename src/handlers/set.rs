@@ -89,7 +89,6 @@ pub async fn handle_set_request<'a>(
             }
             
             {
-                println!("ADE - Stream for OK {:?}", stream);
                 let mut stream_lock = stream.lock().await;
                 let message = "+OK\r\n".to_string();
                 send_message_to_server(&mut stream_lock, &message, true).await.unwrap();
