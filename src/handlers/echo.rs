@@ -13,13 +13,13 @@ pub async fn handle_echo_request<'a>(
 ) -> () {
     println!("Handling ECHO request");
 
-    let mut stream = stream.lock().await;
+    let mut stream = stream.lock().await; 
     
     let echo_line = get_next_element(lines); // Skip the first line
     let len_of_echo_line = echo_line.len();
     let echo_response = format!("${}\r\n{}\r\n", len_of_echo_line, echo_line);
     
-    send_message_to_server(&mut stream, &echo_response, true).await.unwrap();
+    send_message_to_server(&mut stream, &echo_response, false).await.unwrap();
     
     return
 }

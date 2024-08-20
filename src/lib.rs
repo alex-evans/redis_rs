@@ -114,48 +114,26 @@ async fn process_request(
                 println!("Connection closed");
                 return Ok(());
             }
-            Ok(_) => {
-                let request = std::str::from_utf8(&buf).unwrap();
+            Ok(n) => {
+                let request = match std::str::from_utf8(&buf[..n]) {
+                    Ok(req) => req,
+                    Err(e) => {
+                        eprintln!("Invalid UTF-8 sequence: {}", e);
+                        continue;
+                    }
+                };
                 println!("Received request: {}", request);
 
-                if request.starts_with('+') {
-                    // Means it's a Simple String
-                    let response = &request[1..request.len()-2];
-                    println!("Received Simple String: {}", response);
-                    // Process the response here
-                } else if request.starts_with('-') {
-                    // Means it's an Error
-                    let error = &request[1..request.len()-2];
-                    println!("Received Error: {}", error);
-                    // Process the error here
-                } else if request.starts_with(':') {
-                    // Means it's an Integer
-                    let integer = &request[1..request.len()-2];
-                    println!("Received Integer: {}", integer);
-                    // Process the integer here
-                } else if request.starts_with('$') {
-                    // Means it's a Bulk String
-                    let bulk_string = &request[1..request.len()-2];
-                    println!("Received Bulk String: {}", bulk_string);
-                    // Process the bulk string here
-                } else if request.starts_with('*') {
-                    // Means it's a List
-                    println!("Received List: {}", request);
-                    drop(stream_lock); // Release the lock before passing to list_request
+                if request.starts_with('*') {
+                    drop(stream_lock); // Release the lock before processing
                     list_request(&request, &state, stream.clone()).await;
                     println!("Finished processing list request");
-                    // let response_string = list_request(config_ref, &request, &state);
-                    // let response_bytes = response_string.as_bytes().try_into().unwrap();
-                    // if let Err(e) = socket.write_all(response_bytes).await {
-                    //     println!("Failed to write to connection: {}", e);
-                    //     return;
-                    // }
                 } else {
-                    println!("Unknown request format");
+                    println!("Unhandled request format");
                 }
             }
             Err(e) => {
-                println!("Failed to read from connection: {}", e);
+                eprintln!("Failed to read from connection: {}", e);
                 return Ok(());
             }
         }

@@ -40,7 +40,7 @@ pub async fn list_request(
         "GET" => handle_get_request(stream.clone(), &mut lines, state).await,
         "INFO" => handle_info_request(stream.clone(), state).await,
         "REPLCONF" => handle_replconf_request(stream.clone(), &mut lines, state).await, 
-        "PSYNC" => handle_psync_request(stream.clone()).await,
+        "PSYNC" => handle_psync_request(stream.clone(), state).await,
         _ => println!("-ERR Invalid request")
     };
 

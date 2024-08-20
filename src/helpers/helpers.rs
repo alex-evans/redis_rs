@@ -47,9 +47,10 @@ pub async fn send_message_to_server_arc(
     stream: Arc<Mutex<TcpStream>>,
     message: &str,
     wait_for_response: bool
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<Option<String>, Box<dyn std::error::Error>> {
     let mut stream = stream.lock().await;
-    send_message_to_server(&mut *stream, message, wait_for_response).await
+    let result = send_message_to_server(&mut *stream, message, wait_for_response).await?;
+    Ok(Some(result))
 }
 
 // pub async fn send_data_to_replica<'a>(
