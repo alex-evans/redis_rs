@@ -1,10 +1,8 @@
 
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{broadcast, Mutex};
-use tokio::io::AsyncReadExt;
+use tokio::sync::broadcast;
 use tokio::net::TcpListener;
-// use tokio::net::TcpStream;
 
 #[derive(Clone)]
 pub struct Config {
@@ -40,10 +38,13 @@ impl Config {
 
     }
 }
-
 mod command_types {
     pub mod list;
-    pub mod replication;
+}
+
+mod server_types {
+    pub mod master;
+    pub mod replica;
 }
 
 mod handlers {
@@ -60,11 +61,8 @@ mod helpers {
     pub mod helpers;
 }
 
-use command_types::list::list_request;
-use command_types::replication::{
-    store_replication,
-    send_replication_data
-};
+use server_types::master::handle_master_connections;
+use server_types::replica::handle_replica_connections;
 
 pub struct SharedState {
     pub store: HashMap<String, String>,
@@ -79,63 +77,10 @@ pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         sender: broadcast::channel(10).0,
     }));
 
-    let config_clone = config.clone();
-    if config_clone.replicaof != "" {
-        println!("Replicaof is set to: {}", config_clone.replicaof);
-        store_replication(&config_clone, &state).await;
-        send_replication_data(&config_clone, &state).await;
+    // Replica Instance
+    if !config.replicaof.is_empty() {
+        return handle_replica_connections(listener, state, config).await;
     }
+   return handle_master_connections(listener, state).await;
 
-    loop {
-        let (stream, _) = listener.accept().await?;
-        let state_clone = state.clone();
-        tokio::spawn(async move {
-            if let Err(err) = process_request(stream, state_clone).await {
-                eprintln!("Failed to process request: {}", err);
-            }
-        });
-    }
-}
-
-async fn process_request(
-    stream: tokio::net::TcpStream, 
-    state: Arc<Mutex<SharedState>>
-) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Handling process request");
-    
-    let stream = Arc::new(Mutex::new(stream));
-    let mut buf = [0; 1024];
-
-    loop {
-        println!("Waiting for data...");
-        let mut stream_lock = stream.lock().await;
-        match stream_lock.read(&mut buf).await {
-            Ok(0) => {
-                println!("Connection closed");
-                return Ok(());
-            }
-            Ok(n) => {
-                let request = match std::str::from_utf8(&buf[..n]) {
-                    Ok(req) => req,
-                    Err(e) => {
-                        eprintln!("Invalid UTF-8 sequence: {}", e);
-                        continue;
-                    }
-                };
-                println!("Received request: {}", request);
-
-                if request.starts_with('*') {
-                    drop(stream_lock); // Release the lock before processing
-                    list_request(&request, &state, stream.clone()).await;
-                    println!("Finished processing list request");
-                } else {
-                    println!("Unhandled request format");
-                }
-            }
-            Err(e) => {
-                eprintln!("Failed to read from connection: {}", e);
-                return Ok(());
-            }
-        }
-    }
 }

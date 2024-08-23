@@ -1,24 +1,40 @@
-
+use tokio::net::{TcpListener, TcpStream};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tokio::net::TcpStream;
+use tokio::io::AsyncReadExt;
 
-use crate::Config;
-use crate::SharedState;
+use crate::{Config, SharedState};
+use crate::command_types::list::list_request;
 use crate::helpers::helpers::send_message_to_server_arc;
 
-pub async fn store_replication(config_ref: &Config, ref_state: &Arc<Mutex<SharedState>>) -> () {
+pub async fn handle_replica_connections(
+    _listener: TcpListener, 
+    state: Arc<Mutex<SharedState>>,
+    config: Config
+) -> Result<(), Box<dyn std::error::Error>> {
+    store_replication(&config, &state).await;
+    if let Ok(stream) = establish_handshake(&state).await {
+        process_request(stream, state).await?;
+    }
+    return Ok(());
+}
+
+async fn store_replication(
+    config_ref: &Config, 
+    ref_state: &Arc<Mutex<SharedState>>
+) -> () {
     println!("Storing Replication Config");
     let mut state = ref_state.lock().await;
     state.store.insert("replicaof".to_string(), config_ref.replicaof.clone());
 }
 
-pub async fn send_replication_data(_ref_config: &Config, ref_state: &Arc<Mutex<SharedState>>) -> () {
-    println!("Sending Replication Data");
+async fn establish_handshake(
+    ref_state: &Arc<Mutex<SharedState>>
+) -> Result<Arc<Mutex<TcpStream>>, Box<dyn std::error::Error>> {
+    println!("Establishing Replication Handshake");
+    
     let state = ref_state.lock().await;
-    // let repl_port: &str = &ref_config.port;
-
-    println!("Replicaof: {:?}", state.store.get("replicaof"));
+    
     match state.store.get("replicaof") {
         Some(full_value) => {
             let parts: Vec<&str> = full_value.split(" ").collect();
@@ -71,15 +87,51 @@ pub async fn send_replication_data(_ref_config: &Config, ref_state: &Arc<Mutex<S
                             Err(e) => println!("Failed to send PSYNC message: {}", e),
                         }
                     }
-                
+                    Ok(stream)
                 }
                 Err(e) => {
                     println!("Failed to connect to Master: {}", e);
+                    Err(Box::new(e))
                 }
             }
         }
         None => {
-            println!("No Master to send replication data to");
+            println!("No Master Configured");
+            Err(Box::new(std::io::Error::new(std::io::ErrorKind::NotFound, "No master found")))
+        }
+    }
+}
+
+async fn process_request(
+    stream: Arc<Mutex<TcpStream>>,
+    state: Arc<Mutex<SharedState>>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("Handling process request - For Replica");
+    let mut buf = [0; 1024];
+
+    loop {
+        let mut stream_lock = stream.lock().await;
+        match stream_lock.read(&mut buf).await {
+            Ok(0) => {
+                println!("Connection closed");
+                return Ok(());
+            }
+            Ok(n) => {
+                let request = std::str::from_utf8(&buf[..n])?;
+                println!("Received request: {}", request);
+
+                if request.starts_with('*') {
+                    drop(stream_lock); // Release the lock before processing
+                    list_request(&request, &state, stream.clone()).await;
+                    println!("Finished processing list request");
+                } else {
+                    println!("Unhandled request format");
+                }
+            }
+            Err(e) => {
+                eprintln!("Failed to read from connection: {}", e);
+                return Ok(());
+            }
         }
     }
 }

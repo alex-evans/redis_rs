@@ -17,6 +17,13 @@ pub async fn handle_get_request<'a>(
 ) -> () {
     println!("Handling GET request");
 
+    // lock the state to get the store
+    let store = {
+        let state = state.lock().await;
+        state.store.clone()
+    };
+    println!("ADE - State store: {:?}", store);
+
     let key = get_next_element(lines);
     println!("Key: {}", key);
 

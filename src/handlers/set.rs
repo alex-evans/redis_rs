@@ -20,13 +20,17 @@ pub async fn handle_set_request<'a>(
 ) -> () {
     println!("Handling SET request");
 
+    let replica = is_replica(state).await;
+
     let key = get_next_element(lines);
     let value = get_next_element(lines);
 
     if number_of_elements == 2 {
         store_key_value(state, &key, &value).await;
-        send_replica_message(state, &key, &value).await;
-        send_ok_response(stream).await;
+        if !replica {
+            send_replica_message(state, &key, &value).await;
+            send_ok_response(stream).await;
+        };
         return;
     }
 
@@ -44,8 +48,10 @@ pub async fn handle_set_request<'a>(
 
                 let value_with_expiration = format!("{}\r\n{}", value, expiration_time);
                 store_key_value(state, &key, &value_with_expiration).await;
-                send_replica_message(state, &key, &value).await;
-                send_ok_response(stream).await;
+                if !replica {
+                    send_replica_message(state, &key, &value).await;
+                    send_ok_response(stream).await;
+                };
             } else {
                 eprintln!("Failed to parse expiration duration: {}", sub_value);
             }
@@ -53,11 +59,19 @@ pub async fn handle_set_request<'a>(
         _ => {
             println!("Storing key-value pair in state");
             store_key_value(state, &key, &value).await;
-            send_replica_message(state, &key, &value).await;
-            send_ok_response(stream).await;
+            if !replica {
+                println!("ADE - We setting the replica message");
+                send_replica_message(state, &key, &value).await;
+                send_ok_response(stream).await;
+            };
             println!("Successfully stored key-value pair in state");
         }
     }
+}
+
+async fn is_replica(state: &Arc<Mutex<SharedState>>) -> bool {
+    let state_guard = state.lock().await;
+    state_guard.store.get("replicaof").is_some()
 }
 
 async fn store_key_value(state: &Arc<Mutex<SharedState>>, key: &str, value: &str) {
