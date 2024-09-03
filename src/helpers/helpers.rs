@@ -3,6 +3,8 @@ use tokio::io::{AsyncWriteExt, AsyncBufReadExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 
+use crate::SharedState;
+
 pub fn determine_number_of_elements(line: &str) -> i32 {
     let characters: String = line.chars().skip(1).collect();
     let characters_as_int: Result<i32, _> = characters.parse();
@@ -30,33 +32,30 @@ pub async fn send_message_to_server(
     stream.write_all(message.as_bytes()).await?;
     stream.flush().await?;
 
+    let mut response: String = String::new();
     {
         println!("Waiting for response: {}", wait_for_response);
         if wait_for_response {
             let mut reader = BufReader::new(&mut *stream);
-            let mut response: String = String::new();
             reader.read_line(&mut response).await?;
             println!("Received response from server: {}", response);
         }
     }
 
-    return Ok(String::new());
+    return Ok(response);
 }
 
-pub async fn send_message_to_server_arc(
-    stream: Arc<Mutex<TcpStream>>,
-    message: &str,
-    wait_for_response: bool
-) -> Result<Option<String>, Box<dyn std::error::Error>> {
-    let mut stream = stream.lock().await;
-    let result = send_message_to_server(&mut *stream, message, wait_for_response).await?;
-    Ok(Some(result))
-}
-
-// pub async fn send_data_to_replica<'a>(
-//     stream: &mut TcpStream,
-//     request: &str
-// ) -> () {
-//     println!("Sending data to replica");
-//     send_message_to_server(stream, &request, false).await.unwrap();
+// pub async fn send_message_to_server_arc(
+//     stream: Arc<Mutex<TcpStream>>,
+//     message: &str,
+//     wait_for_response: bool
+// ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+//     let mut stream = stream.lock().await;
+//     let result = send_message_to_server(&mut *stream, message, wait_for_response).await?;
+//     Ok(Some(result))
 // }
+
+pub async fn is_replica(state: &Arc<Mutex<SharedState>>) -> bool {
+    let state_guard = state.lock().await;
+    state_guard.store.get("replicaof").is_some()
+}

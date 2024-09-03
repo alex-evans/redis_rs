@@ -7,7 +7,7 @@ use std::time::SystemTime;
 use crate::SharedState;
 use crate::helpers::helpers::{
     get_next_element,
-    send_message_to_server
+    send_message_to_server,
 };
 
 pub async fn handle_get_request<'a>(
@@ -17,13 +17,6 @@ pub async fn handle_get_request<'a>(
 ) -> () {
     println!("Handling GET request");
 
-    // lock the state to get the store
-    let store = {
-        let state = state.lock().await;
-        state.store.clone()
-    };
-    println!("ADE - State store: {:?}", store);
-
     let key = get_next_element(lines);
     println!("Key: {}", key);
 
@@ -32,7 +25,7 @@ pub async fn handle_get_request<'a>(
         let state = state.lock().await;
         state.store.get(&key).cloned()
     };
-    println!("Value info: {:?}", value_info);
+
     let message = if let Some(full_value) = value_info {
         let parts: Vec<&str> = full_value.split("\r\n").collect();
         let value = parts.get(0).unwrap_or(&"");
@@ -62,7 +55,6 @@ pub async fn handle_get_request<'a>(
         "$-1\r\n".to_string()
     };
 
-    // Lock the stream to send the message
     {
         let mut stream = stream.lock().await;
         send_message_to_server(&mut stream, &message, false).await.unwrap();

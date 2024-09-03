@@ -77,10 +77,11 @@ pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         sender: broadcast::channel(10).0,
     }));
 
-    // Replica Instance
-    if !config.replicaof.is_empty() {
-        return handle_replica_connections(listener, state, config).await;
+    if config.replicaof.is_empty() {
+        // Master Instance
+        return handle_master_connections(listener, state).await;
     }
-   return handle_master_connections(listener, state).await;
-
+    
+    // Replica Instance
+    return handle_replica_connections(listener, state, config).await;
 }

@@ -9,6 +9,7 @@ use crate::SharedState;
 use crate::helpers::helpers::{
     get_next_element,
     send_message_to_server,
+    is_replica,
 };
 
 pub async fn handle_set_request<'a>(
@@ -67,11 +68,6 @@ pub async fn handle_set_request<'a>(
             println!("Successfully stored key-value pair in state");
         }
     }
-}
-
-async fn is_replica(state: &Arc<Mutex<SharedState>>) -> bool {
-    let state_guard = state.lock().await;
-    state_guard.store.get("replicaof").is_some()
 }
 
 async fn store_key_value(state: &Arc<Mutex<SharedState>>, key: &str, value: &str) {

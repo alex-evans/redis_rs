@@ -10,6 +10,7 @@ pub async fn handle_master_connections(
     listener: TcpListener, 
     state: Arc<Mutex<SharedState>>
 ) -> Result<(), Box<dyn std::error::Error>> {
+    println!("Handling Master Connections");
     loop {
         match listener.accept().await {
             Ok((stream, _)) => {
