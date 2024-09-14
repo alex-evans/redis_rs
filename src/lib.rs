@@ -69,7 +69,9 @@ pub struct SharedState {
     pub sender: broadcast::Sender<String>,
 }
 
-pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run(
+    config: Config
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("Starting server on port {}", config.port);
     let listener = TcpListener::bind(format!("127.0.0.1:{}", config.port)).await?;
     let state = Arc::new(tokio::sync::Mutex::new(SharedState {
