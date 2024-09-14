@@ -114,39 +114,22 @@ async fn handle_master_connection(
                             buffer.remove(0);
                         }
                     } else {
-                        if buffer.starts_with(b"$") {
-                            match parse_resp_array(&buffer) {
-                                Ok((command, rest)) => {
-                                    println!("Received command: {:?}", command);
-                                    if command.len() == 3 {
-                                        let cmd = format!("*3\r\n${}\r\n{}\r\n${}\r\n{}\r\n${}\r\n{}\r\n",
-                                            command[0].len(), command[0],
-                                            command[1].len(), command[1],
-                                            command[2].len(), command[2]);
-                                        list_request(&cmd, &state, stream.clone()).await;
-                                    }
-                                    buffer = rest.to_vec();
+                        match parse_resp_message(&buffer) {
+                            Ok((command, rest)) => {
+                                println!("Received command: {:?}", command);
+                                if command.len() >= 2 {
+                                    let cmd = format!("*{}\r\n", command.len());
+                                    let cmd = command.iter().fold(cmd, |acc, arg| {
+                                        format!("{}${}\r\n{}\r\n", acc, arg.len(), arg)
+                                    });
+                                    list_request(&cmd, &state, stream.clone()).await;
                                 }
-                                Err(_) => {
-                                    println!("Incomplete command, wait for more data");
-                                    break;
-                                }
+                                buffer = rest.to_vec();
                             }
-                        } else if buffer.starts_with(b"*") {
-                            match parse_resp_array(&buffer) {
-                                Ok((command, rest)) => {
-                                    println!("Received command: {:?}", command);
-                                    list_request(&command.join("\r\n"), &state, stream.clone()).await;
-                                    buffer = rest.to_vec();
-                                }
-                                Err(_) => {
-                                    println!("Incomplete command, wait for more data");
-                                    break;
-                                }
+                            Err(e) => {
+                                println!("Incomplete command, wait for more data: {:?}", e);
+                                break;
                             }
-                        } else {
-                            // Unexpected data
-                            buffer.remove(0);
                         }
                     }
                 }
@@ -224,63 +207,67 @@ async fn send_and_receive(
     Ok(response)
 }
 
-fn parse_resp_array(
+fn parse_resp_message(
     buffer: &[u8]
 ) -> Result<(Vec<String>, &[u8]), Box<dyn std::error::Error + Send + Sync>> {
     let mut rest = buffer;
     let mut result = Vec::new();
-    println!("ADE - Parsing RESP array");
-    println!("ADE - Buffer: {:?}", std::str::from_utf8(buffer));
 
-    while !rest.is_empty() {
-        if rest.starts_with(b"*") {
-            // Parse array
-            let newline = rest.iter().position(|&b| b == b'\n').ok_or("Incomplete data")?;
-            let count: usize = std::str::from_utf8(&rest[1..newline])?.parse()?;
-            rest = &rest[newline + 1..];
-
-            for _ in 0..count {
-                let (element, remaining) = parse_bulk_string(rest)?;
-                result.push(element);
-                rest = remaining;
-            }
-        } else if rest.starts_with(b"$") {
-            // Parse bulk string
-            let (element, remaining) = parse_bulk_string(rest)?;
-            result.push(element);
-            rest = remaining;
-        } else if rest.starts_with(b"\r\n") {
-            // Skip empty lines
-            rest = &rest[2..];
-        } else {
-            // Unexpected data
-            return Err("Unexpected data format".into());
-        }
-
-        if result.len() == 3 {
-            // We have a complete command (command + 2 arguments)
-            break;
-        }
+    // Skip any leading whitespace, including \r\n
+    while !rest.is_empty() && (rest[0] == b'\r' || rest[0] == b'\n' || rest[0] == b' ') {
+        rest = &rest[1..];
     }
 
+    println!("Rest after trimming: {:?}", rest);
+
+    if rest.is_empty() {
+        return Err("Empty buffer after trimming".into());
+    }
+
+    if rest.starts_with(b"*") {
+        // Handle array
+        let newline = rest.iter().position(|&b| b == b'\r').ok_or("Incomplete data")?;
+        let count: usize = std::str::from_utf8(&rest[1..newline])?.parse()?;
+        rest = &rest[newline + 2..]; // Skip \r\n
+
+        for _ in 0..count {
+            let (bulk_string, remaining) = parse_bulk_string(rest)?;
+            result.push(bulk_string);
+            rest = remaining;
+        }
+    } else if rest.starts_with(b"$") {
+        // Handle sequence of bulk strings (for the initial SET command)
+        while rest.starts_with(b"$") {
+            let (bulk_string, remaining) = parse_bulk_string(rest)?;
+            result.push(bulk_string);
+            rest = remaining;
+
+            // Skip any whitespace between bulk strings
+            while !rest.is_empty() && (rest[0] == b'\r' || rest[0] == b'\n' || rest[0] == b' ') {
+                rest = &rest[1..];
+            }
+        }
+    } else {
+        return Err(format!("Unexpected message format: {:?}", rest).into());
+    }
+
+    println!("Result: {:?}", result);
+    println!("Remaining: {:?}", rest);
     Ok((result, rest))
 }
 
 fn parse_bulk_string(buffer: &[u8]) -> Result<(String, &[u8]), Box<dyn std::error::Error + Send + Sync>> {
     // Skip the '$'
     let buffer = &buffer[1..];
-    
     // Find the end of the length
-    if let Some(pos) = buffer.windows(2).position(|w| w == b"\r\n") {
+    if let Some(pos) = buffer.iter().position(|&b| b == b'\r') {
         let length: i64 = std::str::from_utf8(&buffer[..pos])?.parse()?;
-        
         if length == -1 {
             // Null bulk string
             Ok((String::new(), &buffer[pos + 2..]))
         } else if length >= 0 {
             let start = pos + 2;
             let end = start + length as usize;
-            
             if buffer.len() >= end + 2 {
                 let content = std::str::from_utf8(&buffer[start..end])?;
                 Ok((content.to_string(), &buffer[end + 2..]))
