@@ -11,6 +11,9 @@ pub async fn handle_master_connections(
     state: Arc<Mutex<SharedState>>
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("Handling Master Connections");
+
+    store_number_of_replicas(&state).await;
+
     loop {
         match listener.accept().await {
             Ok((stream, _)) => {
@@ -27,6 +30,11 @@ pub async fn handle_master_connections(
             }
         }
     }
+}
+
+async fn store_number_of_replicas(state: &Arc<Mutex<SharedState>>) {
+    let mut state_lock = state.lock().await;
+    state_lock.store.insert("number_of_replicas".to_string(), "0".to_string());
 }
 
 async fn process_request(

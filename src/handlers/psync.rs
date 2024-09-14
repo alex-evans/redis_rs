@@ -68,6 +68,20 @@ pub async fn handle_psync_request<'a>(
         state_guard.sender.subscribe()
     };
 
+    // Increment the number of replicas
+    let current_replica_count = {
+        let state_guard = state.lock().await;
+        match state_guard.store.get("number_of_replicas") {
+            Some(count) => count.clone(),
+            None => "0".to_string(),
+        }
+    };
+    let updated_replica_count = current_replica_count.parse::<i32>().unwrap() + 1;
+    {
+        let mut state_guard = state.lock().await;
+        state_guard.store.insert("number_of_replicas".to_string(), updated_replica_count.to_string());
+    }
+
     // Clone the Arc to move into the task
     let stream_clone = Arc::clone(&stream);
 

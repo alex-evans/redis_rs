@@ -135,7 +135,6 @@ async fn handle_master_connection(
                                     }
                                 };
                                 let updated_offset = (master_repl_offset.parse::<i64>().unwrap() + bytes_processed as i64).to_string();
-                                println!("ADE - Updating master_repl_offset to {}", updated_offset);
 
                                 {
                                     state.lock().await.store.insert("master_repl_offset".to_string(), updated_offset.to_string());
