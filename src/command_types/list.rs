@@ -14,7 +14,7 @@ use crate::handlers::set::handle_set_request;
  
 use crate::helpers::helpers::{
     determine_number_of_elements,
-    get_next_element
+    get_next_element,
 };
 
 pub async fn list_request(
@@ -35,7 +35,7 @@ pub async fn list_request(
 
     match element_one.to_uppercase().as_str() {
         "ECHO" => handle_echo_request(stream.clone(), &mut lines).await,
-        "PING" => handle_ping_request(stream.clone()).await,
+        "PING" => handle_ping_request(stream.clone(), state).await,
         "SET" => handle_set_request(stream.clone(), &mut lines, state, number_of_elements, request).await,
         "GET" => handle_get_request(stream.clone(), &mut lines, state).await,
         "INFO" => handle_info_request(stream.clone(), state).await,

@@ -2,10 +2,22 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::net::TcpStream;
 
-use crate::helpers::helpers::send_message_to_server;
+use crate::SharedState;
+use crate::helpers::helpers::{
+    send_message_to_server,
+    is_replica,
+};
 
-pub async fn handle_ping_request<'a>(stream: Arc<Mutex<TcpStream>>) {
+pub async fn handle_ping_request<'a>(
+    stream: Arc<Mutex<TcpStream>>,
+    state: &'a Arc<Mutex<SharedState>>
+) {
     println!("Handling PING request");
+    let replica = is_replica(state).await;
+    if replica {
+        println!("Received PING request from master - no response");
+        return;
+    }
 
     // Prepare the response message
     let ping_response = "+PONG\r\n".to_string();

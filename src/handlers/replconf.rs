@@ -11,7 +11,7 @@ use crate::helpers::helpers::{
 pub async fn handle_replconf_request<'a>(
     stream: Arc<Mutex<TcpStream>>, 
     lines: &'a mut std::str::Lines<'a>,
-    _state: &'a Arc<Mutex<SharedState>>
+    state: &'a Arc<Mutex<SharedState>>
 ) {
     println!("Handling REPLCONF request");
 
@@ -21,7 +21,16 @@ pub async fn handle_replconf_request<'a>(
 
     if key == "GETACK" {
         println!("REPLCONF - GETACK: {}", value);
-        message = "*3\r\n$8\r\nREPLCONF\r\n$3\r\nACK\r\n$1\r\n0\r\n".to_string();
+        let master_repl_offset = {
+            let state_lock = state.lock().await;
+            match state_lock.store.get("master_repl_offset") {
+                Some(offset) => offset.clone(),
+                None => "0".to_string(),
+            }
+        };
+        let length_offset = master_repl_offset.len();
+        message = format!("*3\r\n$8\r\nREPLCONF\r\n$3\r\nACK\r\n${}\r\n{}\r\n", length_offset, master_repl_offset);
+        println!("ADE - REPLCONF - GETACK - Message: {}", message);
     } else {
         message = "+OK\r\n".to_string();
     }
