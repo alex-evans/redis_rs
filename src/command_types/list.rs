@@ -11,6 +11,7 @@ use crate::handlers::ping::handle_ping_request;
 use crate::handlers::psync::handle_psync_request;
 use crate::handlers::replconf::handle_replconf_request;
 use crate::handlers::set::handle_set_request;
+use crate::handlers::wait::handle_wait_request;
  
 use crate::helpers::helpers::{
     determine_number_of_elements,
@@ -41,6 +42,7 @@ pub async fn list_request(
         "INFO" => handle_info_request(stream.clone(), state).await,
         "REPLCONF" => handle_replconf_request(stream.clone(), &mut lines, state).await, 
         "PSYNC" => handle_psync_request(stream.clone(), state).await,
+        "WAIT" => handle_wait_request(stream.clone()).await,
         _ => println!("-ERR Invalid request")
     };
 

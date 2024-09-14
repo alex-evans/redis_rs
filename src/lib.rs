@@ -55,6 +55,7 @@ mod handlers {
     pub mod ping;
     pub mod psync;
     pub mod replconf;
+    pub mod wait;
 }
 
 mod helpers {
