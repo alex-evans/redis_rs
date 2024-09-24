@@ -7,9 +7,9 @@ use tokio::net::TcpStream;
 
 use crate::SharedState;
 use crate::helpers::helpers::{
-    get_next_element,
+    get_next_element, 
+    is_replica, 
     send_message_to_server,
-    is_replica,
 };
 
 pub async fn handle_set_request<'a>(
@@ -20,6 +20,12 @@ pub async fn handle_set_request<'a>(
     _request: &str, 
 ) -> () {
     println!("Handling SET request");
+
+    // reset ack count
+    {
+        let mut state_lock = state.lock().await;
+        state_lock.store.insert("replica_ack_count".to_string(), "0".to_string());
+    }
 
     let replica = is_replica(state).await;
 
@@ -61,7 +67,6 @@ pub async fn handle_set_request<'a>(
             println!("Storing key-value pair in state");
             store_key_value(state, &key, &value).await;
             if !replica {
-                println!("ADE - We setting the replica message");
                 send_replica_message(state, &key, &value).await;
                 send_ok_response(stream).await;
             };
@@ -84,6 +89,7 @@ async fn send_ok_response(stream: Arc<Mutex<TcpStream>>) {
 }
 
 async fn send_replica_message(state: &Arc<Mutex<SharedState>>, key: &str, value: &str) {
+    println!("Sending SET message to replicas");
     let repl_command = format!(
         "*3\r\n$3\r\nSET\r\n${}\r\n{}\r\n${}\r\n{}\r\n",
         key.len(),
@@ -91,8 +97,19 @@ async fn send_replica_message(state: &Arc<Mutex<SharedState>>, key: &str, value:
         value.len(),
         value
     );
-    let state_guard = state.lock().await;
-    if let Err(err) = state_guard.sender.send(repl_command) {
-        eprintln!("Failed to send message to sender: {}", err);
+    // send SET message to all replicas
+    {
+        let state_guard = state.lock().await;
+        for (id, replica) in &state_guard.replicas {
+            let mut stream = replica.stream.lock().await;
+            println!("Sending SET message to replica {}", id);
+            if let Err(e) = send_message_to_server(&mut stream, &repl_command, false).await {
+                eprintln!("Failed to send message to replica {}: {}", id, e);
+            };
+            println!("Sent SET message to replica {}", id);
+        }
     }
+    
+    println!("Finished sending SET message to replicas - Now ACKing");
+
 }

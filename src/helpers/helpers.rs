@@ -1,7 +1,9 @@
 use std::sync::Arc;
-use tokio::io::{AsyncWriteExt, AsyncBufReadExt, BufReader};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
+use tokio::time::timeout;
+use std::time::Duration;
 
 use crate::SharedState;
 
@@ -32,28 +34,29 @@ pub async fn send_message_to_server(
     stream.write_all(message.as_bytes()).await?;
     stream.flush().await?;
 
-    let mut response: String = String::new();
-    {
-        println!("Waiting for response: {}", wait_for_response);
-        if wait_for_response {
-            let mut reader = BufReader::new(&mut *stream);
-            reader.read_line(&mut response).await?;
-            println!("Received response from server: {}", response);
+    if wait_for_response {
+        println!("Waiting for response...");
+        let mut buffer = vec![0; 1024];
+        let timeout_duration = Duration::from_secs(5);
+
+        match timeout(timeout_duration, stream.read(&mut buffer)).await {
+            Ok(Ok(bytes_read)) => {
+                if bytes_read > 0 {
+                    let response = String::from_utf8_lossy(&buffer[..bytes_read]).to_string();
+                    println!("Received response from server: {}", response);
+                    Ok(response)
+                } else {
+                    Err("Server closed the connection".into())
+                }
+            }
+            Ok(Err(err)) => Err(format!("Error reading from stream: {}", err).into()),
+            Err(_) => Err("Timeout while reading from stream".into()),
         }
+
+    } else {
+        Ok(String::new())
     }
-
-    return Ok(response);
 }
-
-// pub async fn send_message_to_server_arc(
-//     stream: Arc<Mutex<TcpStream>>,
-//     message: &str,
-//     wait_for_response: bool
-// ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-//     let mut stream = stream.lock().await;
-//     let result = send_message_to_server(&mut *stream, message, wait_for_response).await?;
-//     Ok(Some(result))
-// }
 
 pub async fn is_replica(state: &Arc<Mutex<SharedState>>) -> bool {
     let state_guard = state.lock().await;

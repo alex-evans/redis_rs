@@ -35,6 +35,7 @@ pub async fn handle_master_connections(
 async fn store_number_of_replicas(state: &Arc<Mutex<SharedState>>) {
     let mut state_lock = state.lock().await;
     state_lock.store.insert("number_of_replicas".to_string(), "0".to_string());
+    state_lock.store.insert("replica_ack_count".to_string(), "0".to_string());
 }
 
 async fn process_request(

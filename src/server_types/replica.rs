@@ -334,18 +334,3 @@ async fn handle_client(
         }
     }
 }
-
-
-
-// async fn handle_rdb_data(
-//     _buf: &[u8],
-//     _state: &Arc<Mutex<SharedState>>
-// ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-//     // let mut state_lock = state.lock().await;
-//     // if let Some(rdb) = state_lock.rdb.as_mut() {
-//     //     rdb.write_all(buf).await?;
-//     // }
-//     // Ok(())
-//     // Ignore RDB file data
-//     Ok(())
-// }

@@ -2,7 +2,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::broadcast;
-use tokio::net::TcpListener;
+use tokio::sync::Mutex;
+use tokio::net::{TcpListener, TcpStream};   
 
 #[derive(Clone)]
 pub struct Config {
@@ -65,9 +66,16 @@ mod helpers {
 use server_types::master::handle_master_connections;
 use server_types::replica::handle_replica_connections;
 
+pub struct Replica {
+    pub stream: Arc<Mutex<TcpStream>>,
+    // offset: i64,
+    pub ack: bool,
+}
+
 pub struct SharedState {
     pub store: HashMap<String, String>,
-    pub sender: broadcast::Sender<String>,
+    pub sender: tokio::sync::broadcast::Sender<(String, bool)>,
+    pub replicas: HashMap<String, Replica>,
 }
 
 pub async fn run(
@@ -78,6 +86,7 @@ pub async fn run(
     let state = Arc::new(tokio::sync::Mutex::new(SharedState {
         store: HashMap::new(),
         sender: broadcast::channel(10).0,
+        replicas: HashMap::new(),
     }));
 
     if config.replicaof.is_empty() {

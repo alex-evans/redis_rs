@@ -6,6 +6,7 @@ use std::fs;
 use std::path::Path;
 
 use crate::helpers::helpers::send_message_to_server;
+use crate::Replica;
 use crate::SharedState;
 
 pub async fn handle_psync_request<'a>(
@@ -61,34 +62,37 @@ pub async fn handle_psync_request<'a>(
         if let Err(e) = stream.flush().await {
             eprintln!("Failed to flush stream: {}", e);
         }
-    } // Release lock
+    }
 
     let mut receiver = {
         let state_guard = state.lock().await;
         state_guard.sender.subscribe()
     };
 
-    // Increment the number of replicas
-    let current_replica_count = {
+    // create a new replica and store it in the state
+    let replica_id = format!("replica_{}", {
         let state_guard = state.lock().await;
-        match state_guard.store.get("number_of_replicas") {
-            Some(count) => count.clone(),
-            None => "0".to_string(),
-        }
+        state_guard.replicas.len() + 1
+    });
+
+    let new_replica = Replica {
+        stream: Arc::clone(&stream),
+        // offset: 0,
+        ack: false,
     };
-    let updated_replica_count = current_replica_count.parse::<i32>().unwrap() + 1;
+
     {
         let mut state_guard = state.lock().await;
-        state_guard.store.insert("number_of_replicas".to_string(), updated_replica_count.to_string());
+        state_guard.replicas.insert(replica_id.clone(), new_replica);
     }
 
     // Clone the Arc to move into the task
     let stream_clone = Arc::clone(&stream);
 
-    while let Ok(message) = receiver.recv().await {
+    while let Ok((message, wait_for_response)) = receiver.recv().await {
         println!("Received message from sender: {}", message);
         let mut stream_lock = stream_clone.lock().await;
-        if let Err(e) = send_message_to_server(&mut stream_lock, &message, false).await {
+        if let Err(e) = send_message_to_server(&mut stream_lock, &message, wait_for_response).await {
             eprintln!("Failed to send message to client: {}", e);
         }
     }

@@ -30,7 +30,6 @@ pub async fn handle_replconf_request<'a>(
         };
         let length_offset = master_repl_offset.len();
         message = format!("*3\r\n$8\r\nREPLCONF\r\n$3\r\nACK\r\n${}\r\n{}\r\n", length_offset, master_repl_offset);
-        println!("ADE - REPLCONF - GETACK - Message: {}", message);
     } else {
         message = "+OK\r\n".to_string();
     }
